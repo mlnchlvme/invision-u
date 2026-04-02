@@ -34,7 +34,7 @@ function UnderConstruction() {
 }
 
 function renderPage(role, page) {
-  if (role === 'commission') {
+  if (role === 'reviewer') {
     if (page === 'dashboard' || page === 'candidates') return <CommDashboard />;
     if (page === 'ai-chat')  return <CommAIChat />;
     if (page === 'settings') return <CommSettings />;
