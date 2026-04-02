@@ -25,8 +25,8 @@ export default function RoleBar({ role, setRole, setPage }) {
           Абитуриент
         </button>
         <button
-          className={role === 'commission' ? 'active' : ''}
-          onClick={() => { setRole('commission'); setPage('dashboard'); }}
+          className={role === 'reviewer' ? 'active' : ''}
+          onClick={() => { setRole('reviewer'); setPage('dashboard'); }}
         >
           Комиссия
         </button>

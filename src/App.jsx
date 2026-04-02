@@ -51,12 +51,12 @@ function renderPage(role, page) {
 
 function Portal() {
   const { user } = useAuth();
-  const isComm = user?.role === 'commission';
+  const isComm = user?.role === 'reviewer';
   const nav    = isComm ? COMM_NAV : CAND_NAV;
   const defaultPage = isComm ? 'dashboard' : 'status';
   const [page, setPage] = useState(defaultPage);
 
-  const role = isComm ? 'commission' : 'candidate';
+  const role = isComm ? 'reviewer' : 'candidate';
 
   return (
     <>
