@@ -1,0 +1,130 @@
+/* ── Main layout shell ────────────────────────────────────────────────────── */
+.layout {
+  display: flex;
+  height: calc(100vh - 56px);
+}
+.layout__main {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+/* ── Page header ──────────────────────────────────────────────────────────── */
+.page-header {
+  padding: 28px 32px 20px;
+  border-bottom: 1.5px solid var(--border);
+  background: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.page-header h1 {
+  font-size: 1.5rem;
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+.page-header p { color: var(--muted); margin-top: 4px; font-size: 13px; font-weight: 500; }
+
+/* ── Content area ─────────────────────────────────────────────────────────── */
+.content { padding: 24px 32px; }
+
+/* ── Stat grid ────────────────────────────────────────────────────────────── */
+.stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.stat-card {
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow .15s;
+}
+.stat-card:hover { box-shadow: var(--shadow); }
+.stat-card .val { font-size: 2rem; font-weight: 900; letter-spacing: -0.04em; line-height: 1; }
+.stat-card .lbl { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; margin-top: 6px; }
+.stat-card .delta { font-size: 11px; color: var(--green); margin-top: 6px; font-weight: 600; }
+
+/* ── Info grid ────────────────────────────────────────────────────────────── */
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.info-row { display: flex; flex-direction: column; gap: 3px; }
+.info-row .key { font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.info-row .val { font-size: 13px; font-weight: 600; }
+
+/* ── Timeline ─────────────────────────────────────────────────────────────── */
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.tl-item { display: flex; gap: 16px; padding-bottom: 24px; position: relative; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-dot { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; z-index: 1; }
+.tl-dot.done   { background: var(--accent); color: var(--text); }
+.tl-dot.active { background: var(--text); color: var(--bg); box-shadow: 0 0 0 5px var(--accent-dim); }
+.tl-dot.wait   { background: var(--panel); color: var(--muted-light); border: 1.5px solid var(--border); }
+.tl-line { position: absolute; left: 14px; top: 30px; bottom: 0; width: 2px; background: var(--border); }
+.tl-item:last-child .tl-line { display: none; }
+.tl-content { padding-top: 4px; }
+.tl-content h4 { font-weight: 700; font-size: 13px; }
+.tl-content p { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+/* ── Table ────────────────────────────────────────────────────────────────── */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { text-align: left; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 8px 12px; border-bottom: 1.5px solid var(--border); }
+.tbl td { padding: 12px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+.tbl tr:last-child td { border-bottom: none; }
+.tbl tr:hover td { background: var(--surface); }
+.tbl td .name { font-weight: 700; }
+.tbl td .meta { color: var(--muted); font-size: 11px; }
+.candidate-row { cursor: pointer; }
+.candidate-detail { background: var(--surface); }
+.cd-inner { padding: 16px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+/* ── Tabs ─────────────────────────────────────────────────────────────────── */
+.tabs { display: flex; border-bottom: 1.5px solid var(--border); margin-bottom: 20px; }
+.tab { padding: 10px 18px; font-size: 13px; font-weight: 700; color: var(--muted); cursor: pointer; border-bottom: 2.5px solid transparent; transition: .12s; }
+.tab.active { color: var(--text); border-bottom-color: var(--accent); }
+
+/* ── Radar / Bar Chart wrappers ───────────────────────────────────────────── */
+.radar-wrap { display: flex; align-items: center; justify-content: center; height: 180px; border: 1px dashed var(--border); border-radius: var(--r); position: relative; overflow: hidden; }
+.radar-wrap svg { width: 160px; height: 160px; opacity: .9; }
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding: 8px 0; }
+.bar { flex: 1; border-radius: 4px 4px 0 0; background: var(--accent); opacity: .7; transition: .3s; position: relative; }
+.bar:hover { opacity: 1; }
+.bar .bar-val { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); font-size: 10px; color: var(--muted); white-space: nowrap; font-weight: 700; }
+.bar-labels { display: flex; gap: 8px; }
+.bar-label { flex: 1; text-align: center; font-size: 10px; color: var(--muted); font-weight: 600; }
+
+/* ── Mobile/Tablet adjustments ────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .layout { height: calc(100vh - 56px - 70px); }  /* leave room for bottom nav */
+  .page-header { padding: 20px 16px 14px; }
+  .page-header h1 { font-size: 1.2rem; }
+  .content { padding: 16px; }
+  .stat-grid { grid-template-columns: 1fr 1fr; }
+  .stat-card .val { font-size: 1.6rem; }
+  .info-grid { grid-template-columns: 1fr; }
+  .cd-inner { grid-template-columns: 1fr; }
+  .tbl { font-size: 12px; }
+  .tbl th, .tbl td { padding: 8px 8px; }
+}
+@media (min-width: 768px) and (max-width: 1023px) {
+  .page-header { padding: 22px 24px 16px; }
+  .content { padding: 20px 24px; }
+}
+
+.page-enter {
+  animation: pageEnter .28s ease both;
+}
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.stat-card {
+  animation: fadeIn .4s ease both;
+}
+.stat-card:nth-child(1) { animation-delay: .05s; }
+.stat-card:nth-child(2) { animation-delay: .10s; }
+.stat-card:nth-child(3) { animation-delay: .15s; }
+.stat-card:nth-child(4) { animation-delay: .20s; }
+
+.card {
+  animation: fadeIn .35s ease both;
+}

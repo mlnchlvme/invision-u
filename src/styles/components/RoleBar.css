@@ -1,0 +1,133 @@
+/* ── RoleBar component styles ─────────────────────────────────────────────── */
+.role-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  height: 56px;
+  background: var(--bg);
+  border-bottom: 1.5px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  gap: 16px;
+}
+
+.role-bar__logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+.role-bar__logo-text {
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  line-height: 1;
+}
+.role-bar__logo-dot {
+  display: inline-block;
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-left: 2px;
+  vertical-align: super;
+}
+.role-bar__logo-sub {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.role-bar__toggle {
+  display: flex;
+  background: var(--panel);
+  border-radius: var(--r);
+  padding: 3px;
+  gap: 2px;
+  border: 1.5px solid var(--border);
+}
+.role-bar__toggle button {
+  padding: 6px 16px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--font);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 6px;
+  transition: all .15s;
+}
+.role-bar__toggle button.active {
+  background: var(--accent);
+  color: var(--text);
+  box-shadow: 0 1px 4px rgba(192,241,28,.3);
+}
+
+.role-bar__user {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.role-bar__user-dot {
+  display: inline-block;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+/* Mobile: hide username text */
+@media (max-width: 640px) {
+  .role-bar { padding: 0 16px; }
+  .role-bar__user-name { display: none; }
+  .role-bar__toggle button { padding: 6px 12px; font-size: 11px; }
+}
+
+.role-bar__logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+  margin-right: 4px;
+}
+
+.btn-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+  flex-shrink: 0;
+}
+.btn-logout:hover {
+  border-color: var(--red);
+  color: var(--red);
+  background: rgba(234,84,85,.07);
+}
