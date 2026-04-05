@@ -1,54 +1,56 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import StatusBadge from '../shared/StatusBadge';
 import { useAuth } from '../../context/AuthContext';
 import { applicationsApi } from '../../api/applications';
 import { IconInfo, IconCheck, IconWarn, IconUpload } from '../icons';
 import { toast } from '../shared/Toast';
 
-// 1.3 — маппинг данных API → шаги прогресса
-function mapApiStepsToUI(apiDetail) {
+function mapApiStepsToUI(apiDetail, t) {
   const status       = apiDetail?.status || 'draft';
   const hasAnswers   = !!apiDetail?.answers?.length;
   const hasVideo     = !!apiDetail?.video_url;
   const hasInterview = !!apiDetail?.interview_completed;
 
   return [
-    { id: 1, label: 'Регистрация',        desc: 'Аккаунт создан на портале',          status: 'done' },
-    { id: 2, label: 'Анкета и документы', desc: 'Аттестат, рекомендации',             status: apiDetail?.documents?.ent_score ? 'done' : 'active' },
-    { id: 3, label: 'Письменные ответы',  desc: '3 мотивационных эссе',               status: hasAnswers ? 'done' : (apiDetail?.documents?.ent_score ? 'active' : 'wait') },
-    { id: 4, label: 'AI-интервью',        desc: 'Адаптивные вопросы по D.R.I.V.E.',  status: hasInterview ? 'done' : (hasAnswers ? 'active' : 'wait') },
-    { id: 5, label: 'Видеозапись',        desc: 'Самопрезентация 2–3 минуты',         status: hasVideo ? 'done' : (hasInterview ? 'active' : 'wait') },
-    { id: 6, label: 'Обработка',          desc: 'AI-анализ + ревью комиссии',         status: ['review', 'approved', 'rejected'].includes(status) ? (status === 'review' ? 'active' : 'done') : 'wait' },
-    { id: 7, label: 'Решение',            desc: 'Уведомление по email до 30 мая',     status: ['approved', 'rejected'].includes(status) ? 'done' : 'wait' },
+    { id: 1, label: t('candidate.step_register'),  desc: t('candidate.step_register_desc'),  status: 'done' },
+    { id: 2, label: t('candidate.step_docs'),       desc: t('candidate.step_docs_desc'),       status: apiDetail?.documents?.ent_score ? 'done' : 'active' },
+    { id: 3, label: t('candidate.step_essays'),     desc: t('candidate.step_essays_desc'),     status: hasAnswers ? 'done' : (apiDetail?.documents?.ent_score ? 'active' : 'wait') },
+    { id: 4, label: t('candidate.step_interview'),  desc: t('candidate.step_interview_desc'),  status: hasInterview ? 'done' : (hasAnswers ? 'active' : 'wait') },
+    { id: 5, label: t('candidate.step_video'),      desc: t('candidate.step_video_desc'),      status: hasVideo ? 'done' : (hasInterview ? 'active' : 'wait') },
+    { id: 6, label: t('candidate.step_processing'), desc: t('candidate.step_processing_desc'), status: ['review', 'approved', 'rejected'].includes(status) ? (status === 'review' ? 'active' : 'done') : 'wait' },
+    { id: 7, label: t('candidate.step_decision'),   desc: t('candidate.step_decision_desc'),   status: ['approved', 'rejected'].includes(status) ? 'done' : 'wait' },
   ];
 }
 
-const FIELDS = [
-  { key: 'ent_score',       label: 'ЕНТ балл',       type: 'number', min: 0,   max: 140,  step: 1,    required: true,  hint: 'от 0 до 140',   placeholder: 'макс. 140' },
-  { key: 'ielts_score',     label: 'IELTS',           type: 'number', min: 0,   max: 9,    step: 0.5,  required: false, hint: 'от 0.0 до 9.0', placeholder: 'необязательно' },
-  { key: 'gpa',             label: 'GPA',             type: 'number', min: 0,   max: 4,    step: 0.01, required: false, hint: 'от 0 до 4.0',   placeholder: 'напр. 3.8' },
-  { key: 'graduation_year', label: 'Год окончания',   type: 'number', min: 2020, max: 2027, step: 1,   required: true,  hint: '2020–2027',     placeholder: '2025' },
-  { key: 'school_name',     label: 'Название школы',  type: 'text',   minLength: 5, maxLength: 200,     required: true,  hint: '5–200 символов', placeholder: 'Средняя школа №...' },
-];
-
-function validateField(fieldDef, value) {
-  if (fieldDef.required && (value === '' || value == null)) return 'Обязательное поле';
+function validateField(fieldDef, value, t) {
+  if (fieldDef.required && (value === '' || value == null)) return t('candidate.validation_required');
   if (value === '' || value == null) return null;
 
   if (fieldDef.type === 'number') {
     const n = Number(value);
-    if (isNaN(n)) return 'Введите число';
-    if (fieldDef.min != null && n < fieldDef.min) return `Минимум: ${fieldDef.min}`;
-    if (fieldDef.max != null && n > fieldDef.max) return `Максимум: ${fieldDef.max}`;
+    if (isNaN(n)) return t('candidate.validation_number');
+    if (fieldDef.min != null && n < fieldDef.min) return t('candidate.validation_min', { val: fieldDef.min });
+    if (fieldDef.max != null && n > fieldDef.max) return t('candidate.validation_max', { val: fieldDef.max });
   }
   if (fieldDef.type === 'text') {
-    if (fieldDef.minLength && value.length < fieldDef.minLength) return `Минимум ${fieldDef.minLength} символов`;
-    if (fieldDef.maxLength && value.length > fieldDef.maxLength) return `Максимум ${fieldDef.maxLength} символов`;
+    if (fieldDef.minLength && value.length < fieldDef.minLength) return t('candidate.validation_minlen', { val: fieldDef.minLength });
+    if (fieldDef.maxLength && value.length > fieldDef.maxLength) return t('candidate.validation_maxlen', { val: fieldDef.maxLength });
   }
   return null;
 }
 
 function DocumentsForm({ appId, onSaved }) {
+  const { t } = useTranslation();
+
+  const FIELDS = [
+    { key: 'ent_score',       label: t('candidate.field_ent_label'),   type: 'number', min: 0,   max: 140,  step: 1,    required: true,  hint: t('candidate.field_ent_hint'),    placeholder: t('candidate.field_ent_placeholder') },
+    { key: 'ielts_score',     label: t('candidate.field_ielts_label'), type: 'number', min: 0,   max: 9,    step: 0.5,  required: false, hint: t('candidate.field_ielts_hint'),  placeholder: t('candidate.field_ielts_placeholder') },
+    { key: 'gpa',             label: t('candidate.field_gpa_label'),   type: 'number', min: 0,   max: 4,    step: 0.01, required: false, hint: t('candidate.field_gpa_hint'),    placeholder: t('candidate.field_gpa_placeholder') },
+    { key: 'graduation_year', label: t('candidate.field_grad_label'),  type: 'number', min: 2020, max: 2027, step: 1,   required: true,  hint: t('candidate.field_grad_hint'),   placeholder: t('candidate.field_grad_placeholder') },
+    { key: 'school_name',     label: t('candidate.field_school_label'), type: 'text',  minLength: 5, maxLength: 200,    required: true,  hint: t('candidate.field_school_hint'), placeholder: t('candidate.field_school_placeholder') },
+  ];
+
   const [form, setForm] = useState({ ent_score: '', ielts_score: '', gpa: '', graduation_year: '', school_name: '' });
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -58,23 +60,20 @@ function DocumentsForm({ appId, onSaved }) {
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
   const touch = (k) => {
-    setTouched(t => ({ ...t, [k]: true }));
+    setTouched(th => ({ ...th, [k]: true }));
     const field = FIELDS.find(f => f.key === k);
-    const err = validateField(field, form[k]);
+    const err = validateField(field, form[k], t);
     setErrors(e => ({ ...e, [k]: err }));
   };
 
-  const hasErrors = FIELDS.some(f => {
-    const err = validateField(f, form[f.key]);
-    return err !== null;
-  });
+  const hasErrors = FIELDS.some(f => validateField(f, form[f.key], t) !== null);
 
   const save = async () => {
     const allTouched = {};
     const allErrors = {};
     FIELDS.forEach(f => {
       allTouched[f.key] = true;
-      allErrors[f.key] = validateField(f, form[f.key]);
+      allErrors[f.key] = validateField(f, form[f.key], t);
     });
     setTouched(allTouched);
     setErrors(allErrors);
@@ -91,18 +90,18 @@ function DocumentsForm({ appId, onSaved }) {
       if (form.school_name)     payload.school_name     = form.school_name;
       await applicationsApi.updateDocs(appId, payload);
       setSaved(true);
-      toast('Данные сохранены', 'success');
+      toast(t('candidate.docs_saved'), 'success');
       setTimeout(() => setSaved(false), 3000);
       if (onSaved) onSaved();
     } catch {
-      toast('Ошибка сохранения', 'error');
+      toast(t('candidate.docs_save_error'), 'error');
     }
     setSaving(false);
   };
 
   return (
     <div className="card fade-in">
-      <h3>Академические данные</h3>
+      <h3>{t('candidate.docs_form_title')}</h3>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: 14 }}>
         {FIELDS.map(f => {
           const hasError = touched[f.key] && errors[f.key];
@@ -152,7 +151,12 @@ function DocumentsForm({ appId, onSaved }) {
       </div>
       <div className="btn-row">
         <button className="btn btn-primary btn-sm" onClick={save} disabled={saving || hasErrors}>
-          {saved ? <><IconCheck size={13} /> Сохранено</> : saving ? 'Сохранение...' : <><IconUpload size={13} /> Сохранить данные</>}
+          {saved
+            ? <><IconCheck size={13} /> {t('candidate.docs_saved_btn')}</>
+            : saving
+              ? t('candidate.docs_saving')
+              : <><IconUpload size={13} /> {t('candidate.docs_save_btn')}</>
+          }
         </button>
       </div>
     </div>
@@ -160,6 +164,7 @@ function DocumentsForm({ appId, onSaved }) {
 }
 
 export default function CandidateStatus() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const [detail, setDetail]   = useState(null);
   const [loading, setLoading] = useState(true);
@@ -184,9 +189,9 @@ export default function CandidateStatus() {
       const res = await applicationsApi.submit(user.appId);
       setDetail(res);
       setSubmitted(true);
-      toast('Заявка успешно отправлена!', 'success');
+      toast(t('candidate.submitted_ok'), 'success');
     } catch (e) {
-      toast(e.message || 'Ошибка отправки', 'error');
+      toast(e.message || t('candidate.submit_error'), 'error');
     }
     setSubmitting(false);
   };
@@ -198,14 +203,14 @@ export default function CandidateStatus() {
   const status = detail?.status || 'review';
   const canSubmit = status === 'draft' && !submitted;
 
-  const steps = mapApiStepsToUI(detail);
+  const steps = mapApiStepsToUI(detail, t);
 
   const docs = [
-    { name: 'Аттестат (ЕНТ)',           ok: !!detail?.documents?.ent_score },
-    { name: 'Сертификат UNT',            ok: !!detail?.documents?.ent_score },
-    { name: 'Рекомендательное письмо',   ok: false },
-    { name: 'Видео-представление',       ok: false },
-    { name: 'IELTS / TOEFL (если есть)', ok: !!detail?.documents?.ielts_score },
+    { name: t('candidate.doc_ent'),            ok: !!detail?.documents?.ent_score },
+    { name: t('candidate.doc_unt'),            ok: !!detail?.documents?.ent_score },
+    { name: t('candidate.doc_recommendation'), ok: false },
+    { name: t('candidate.doc_video'),          ok: false },
+    { name: t('candidate.doc_ielts'),          ok: !!detail?.documents?.ielts_score },
   ];
 
   return (
@@ -213,8 +218,8 @@ export default function CandidateStatus() {
       <div className="page-header">
         <div className="flex items-center justify-between">
           <div>
-            <h1>Моя заявка</h1>
-            <p>ID заявки: <span className="mono text-accent">{appId}</span></p>
+            <h1>{t('candidate.application_title')}</h1>
+            <p>{t('candidate.app_id_label')} <span className="mono text-accent">{appId}</span></p>
           </div>
           <StatusBadge status={status} />
         </div>
@@ -231,26 +236,26 @@ export default function CandidateStatus() {
             {submitted ? (
               <div className="alert-box">
                 <IconCheck size={14} />
-                Заявка успешно отправлена на рассмотрение!
+                {t('candidate.alert_submitted')}
               </div>
             ) : (
               <div className="alert-box">
                 <IconInfo size={14} />
-                AI-интервью открыто. Пожалуйста, пройдите его до 1 апреля 2026.
+                {t('candidate.alert_interview_open')}
               </div>
             )}
 
             <div className="flex flex-wrap gap-12">
               <div className="card" style={{ flex: '1 1 280px' }}>
-                <h3>Личные данные</h3>
+                <h3>{t('candidate.personal_title')}</h3>
                 <div className="info-grid">
                   {[
-                    ['Имя',       detail?.full_name || user?.fullName || '—'],
-                    ['Программа', detail?.program   || 'Foundation Year'],
-                    ['Страна',    detail?.country   || '—'],
-                    ['Город',     detail?.city      || '—'],
-                    ['Школа',     detail?.documents?.school_name || '—'],
-                    ['ЕНТ',       detail?.documents?.ent_score   ? `${detail.documents.ent_score} / 140` : '—'],
+                    [t('candidate.field_name'),    detail?.full_name || user?.fullName || '—'],
+                    [t('candidate.field_program'), detail?.program   || 'Foundation Year'],
+                    [t('candidate.field_country'), detail?.country   || '—'],
+                    [t('candidate.field_city'),    detail?.city      || '—'],
+                    [t('candidate.field_school'),  detail?.documents?.school_name || '—'],
+                    [t('candidate.field_ent'),     detail?.documents?.ent_score ? `${detail.documents.ent_score} / 140` : '—'],
                   ].map(([k, v]) => (
                     <div key={k} className="info-row">
                       <span className="key">{k}</span>
@@ -261,7 +266,7 @@ export default function CandidateStatus() {
               </div>
 
               <div className="card" style={{ flex: '1 1 240px' }}>
-                <h3>Загруженные документы</h3>
+                <h3>{t('candidate.docs_title')}</h3>
                 {docs.map(d => (
                   <div key={d.name} className="flex items-center justify-between" style={{ marginBottom: 10, fontSize: 13 }}>
                     <span style={{ fontWeight: 500 }}>{d.name}</span>
@@ -271,7 +276,7 @@ export default function CandidateStatus() {
                   </div>
                 ))}
                 <button className="btn btn-ghost btn-sm mt-8" onClick={() => setShowDocs(s => !s)}>
-                  {showDocs ? '↑ Скрыть форму' : '+ Заполнить данные'}
+                  {showDocs ? t('candidate.hide_docs_form') : t('candidate.show_docs_form')}
                 </button>
               </div>
             </div>
@@ -281,7 +286,7 @@ export default function CandidateStatus() {
             )}
 
             <div className="card">
-              <h3>Прогресс по этапам</h3>
+              <h3>{t('candidate.progress_title')}</h3>
               <div className="timeline">
                 {steps.map(s => (
                   <div key={s.id} className="tl-item">
@@ -296,7 +301,7 @@ export default function CandidateStatus() {
                         {s.label}
                         {s.status === 'active' && (
                           <span style={{ marginLeft: 8, background: 'var(--accent)', color: 'var(--text)', fontSize: 9, fontWeight: 800, padding: '2px 8px', borderRadius: 20, letterSpacing: '.05em', textTransform: 'uppercase', verticalAlign: 'middle' }}>
-                            Сейчас
+                            {t('candidate.status_now')}
                           </span>
                         )}
                       </h4>
@@ -309,7 +314,7 @@ export default function CandidateStatus() {
               {canSubmit && (
                 <div style={{ marginTop: 20 }}>
                   <button className="btn btn-dark" onClick={submitApp} disabled={submitting}>
-                    {submitting ? 'Отправка...' : 'Отправить заявку на рассмотрение'}
+                    {submitting ? t('candidate.submitting') : t('candidate.submit_btn')}
                   </button>
                 </div>
               )}

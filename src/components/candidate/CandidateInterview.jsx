@@ -1,16 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import '../../styles/components/Chat.css';
 import { interviewApi } from '../../api/interview';
 import { useAuth } from '../../context/AuthContext';
 import { INTERVIEW_QS } from '../../data/mockData';
 import { IconSend } from '../icons';
-
-const FALLBACK_FOLLOW = [
-  'Интересно! Можете привести конкретный пример из вашей жизни?',
-  'Каков был измеримый результат ваших действий?',
-  'Что бы вы сделали иначе, если бы оказались в этой ситуации снова?',
-  'Как этот опыт изменил ваши взгляды или подход к жизни?',
-];
 
 const SpeechRecognition =
   typeof window !== 'undefined'
@@ -20,7 +14,16 @@ const SpeechRecognition =
 const hasSpeech = !!SpeechRecognition;
 
 export default function CandidateInterview() {
+  const { t } = useTranslation();
   const { user } = useAuth();
+
+  const FALLBACK_FOLLOW = [
+    t('interview_fallback.follow1'),
+    t('interview_fallback.follow2'),
+    t('interview_fallback.follow3'),
+    t('interview_fallback.follow4'),
+  ];
+
   const [msgs, setMsgs]               = useState([]);
   const [input, setInput]             = useState('');
   const [typing, setTyping]           = useState(false);
@@ -29,7 +32,7 @@ export default function CandidateInterview() {
   const [progress, setProgress]       = useState({ current: 1, total: 5 });
   const [qIndex, setQIndex]           = useState(0);
 
-  const [voiceMode, setVoiceMode]     = useState(hasSpeech); // включён по умолчанию если доступен
+  const [voiceMode, setVoiceMode]     = useState(hasSpeech);
   const [listening, setListening]     = useState(false);
   const [ttsPlaying, setTtsPlaying]   = useState(false);
 
@@ -96,6 +99,8 @@ export default function CandidateInterview() {
     recogRef.current?.stop();
   }, []);
 
+  const doneText = t('candidate.interview_done_text');
+
   const sendReal = async (ans) => {
     setTyping(true);
     try {
@@ -103,9 +108,8 @@ export default function CandidateInterview() {
       setTyping(false);
       if (data.is_complete) {
         setDone(true);
-        const text = 'Спасибо! AI-интервью завершено. Ваши ответы переданы на анализ. Следующий шаг — запись видео-представления.';
-        setMsgs(m => [...m, { role: 'ai', text }]);
-        if (voiceMode) speakBrowser(text);
+        setMsgs(m => [...m, { role: 'ai', text: doneText }]);
+        if (voiceMode) speakBrowser(doneText);
       } else {
         setProgress(p => ({ ...p, current: data.question_number }));
         setMsgs(m => [...m, { role: 'ai', text: data.next_question }]);
@@ -132,7 +136,7 @@ export default function CandidateInterview() {
       }
     } else {
       setDone(true);
-      aiText = 'Спасибо! AI-интервью завершено. Ваши ответы переданы на анализ. Следующий шаг — запись видео-представления.';
+      aiText = doneText;
     }
     setMsgs(m => [...m, { role: 'ai', text: aiText }]);
     if (voiceMode) speakBrowser(aiText);
@@ -206,8 +210,8 @@ export default function CandidateInterview() {
       <div className="page-header">
         <div className="flex items-center justify-between flex-wrap gap-8">
           <div>
-            <h1>AI-интервью</h1>
-            <p>Адаптивные вопросы · {progress.current}/{progress.total}</p>
+            <h1>{t('candidate.interview_title')}</h1>
+            <p>{t('candidate.interview_subtitle', { current: progress.current, total: progress.total })}</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div className="progress-bar" style={{ width: 120 }}>
@@ -218,14 +222,14 @@ export default function CandidateInterview() {
               <button
                 className={`btn btn-sm ${voiceMode ? 'btn-primary' : 'btn-ghost'}`}
                 onClick={toggleVoice}
-                title={voiceMode ? 'Выключить голос' : 'Включить голос'}
+                title={voiceMode ? t('candidate.voice_on_title') : t('candidate.voice_off_title')}
                 style={{ gap: 6 }}
               >
-                {voiceMode ? '🎙️ Голос вкл' : '🎙️ Голос выкл'}
+                {voiceMode ? t('candidate.voice_on') : t('candidate.voice_off')}
               </button>
             )}
             {!hasSpeech && (
-              <span className="text-muted text-sm" style={{ fontSize: 11 }}>Текстовый режим</span>
+              <span className="text-muted text-sm" style={{ fontSize: 11 }}>{t('candidate.text_mode')}</span>
             )}
           </div>
         </div>
@@ -236,14 +240,15 @@ export default function CandidateInterview() {
           <div key={i} className={`chat-msg ${m.role}`} style={{ animation: 'fadeIn .25s ease both' }}>
             <div className="chat-bubble">
               {m.text}
-              {/* Индикатор воспроизведения TTS у последнего AI-сообщения */}
               {voiceMode && m.role === 'ai' && i === msgs.length - 1 && ttsPlaying && (
                 <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--accent)', fontWeight: 700 }}>
-                  ♪ озвучивается...
+                  {t('candidate.tts_playing')}
                 </span>
               )}
             </div>
-            <div className="chat-meta">{m.role === 'ai' ? 'AI-интервьюер · inVision U' : 'Вы'}</div>
+            <div className="chat-meta">
+              {m.role === 'ai' ? t('candidate.interviewer_label') : t('candidate.you_label')}
+            </div>
           </div>
         ))}
         {typing && (
@@ -260,10 +265,10 @@ export default function CandidateInterview() {
         <input
           className="chat-input"
           placeholder={
-            done       ? 'Интервью завершено' :
-            listening  ? '🎙️ Говорите...' :
-            voiceMode  ? 'Нажмите 🎙️ или введите текст (Enter)' :
-                         'Ваш ответ... (Enter для отправки)'
+            done      ? t('candidate.interview_done_placeholder') :
+            listening ? t('candidate.listening_placeholder') :
+            voiceMode ? t('candidate.voice_placeholder') :
+                        t('candidate.text_placeholder')
           }
           disabled={done}
           value={input}
@@ -276,7 +281,7 @@ export default function CandidateInterview() {
             className={`btn btn-sm ${listening ? 'btn-red' : 'btn-ghost'}`}
             style={{ minWidth: 44, fontSize: 18, padding: '0 12px' }}
             onClick={listening ? stopListening : startListening}
-            title={listening ? 'Остановить запись' : 'Начать говорить'}
+            title={listening ? t('candidate.voice_on_title') : t('candidate.voice_off_title')}
             disabled={ttsPlaying}
           >
             {listening
@@ -291,7 +296,7 @@ export default function CandidateInterview() {
           disabled={done || !input.trim() || listening}
         >
           <IconSend size={15} />
-          Ответить
+          {t('candidate.reply_btn')}
         </button>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import '../../styles/components/Questions.css';
 import { questionsApi } from '../../api/questions';
 import { applicationsApi } from '../../api/applications';
@@ -16,6 +17,7 @@ function wordCount(text) {
 }
 
 function WordCounter({ text }) {
+  const { t } = useTranslation();
   const count = wordCount(text);
   const tooShort = count > 0 && count < WORDS_MIN;
   const tooLong  = count > WORDS_MAX;
@@ -33,16 +35,16 @@ function WordCounter({ text }) {
         {count}
       </span>
       <span className="text-muted text-sm" style={{ fontWeight: 600 }}>
-        / {WORDS_MIN}–{WORDS_MAX} слов
+        {t('candidate.words_counter', { min: WORDS_MIN, max: WORDS_MAX })}
       </span>
       {tooShort && (
         <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>
-          — добавьте деталей
+          {t('candidate.words_warn_low')}
         </span>
       )}
       {tooLong && (
         <span style={{ fontSize: 11, color: 'var(--red)', fontWeight: 600 }}>
-          — превышен объём
+          {t('candidate.words_warn_high')}
         </span>
       )}
     </div>
@@ -50,6 +52,7 @@ function WordCounter({ text }) {
 }
 
 export default function CandidateQuestions() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const appId = user?.appId;
 
@@ -118,12 +121,12 @@ export default function CandidateQuestions() {
         text: ans[i] || '',
       }));
       await applicationsApi.updateAnswers(appId, { answers: payload });
-      toast('Ответы сохранены', 'success');
+      toast(t('candidate.toast_saved'), 'success');
     } catch (err) {
       if (err?.message === 'NETWORK_ERROR') {
-        toast('Нет соединения — черновик сохранён локально', 'error');
+        toast(t('candidate.toast_offline'), 'error');
       } else {
-        toast('Не удалось сохранить', 'error');
+        toast(t('candidate.toast_save_error'), 'error');
       }
     }
     setSaving(false);
@@ -155,9 +158,9 @@ export default function CandidateQuestions() {
         }}>
           <IconCheck size={28} />
         </div>
-        <h2>Ответы отправлены</h2>
+        <h2>{t('candidate.submitted_title')}</h2>
         <p className="text-muted" style={{ fontWeight: 500 }}>
-          Перейдите к следующему этапу — AI-интервью
+          {t('candidate.submitted_desc')}
         </p>
       </div>
     );
@@ -174,10 +177,12 @@ export default function CandidateQuestions() {
       <div className="page-header">
         <div className="flex items-center justify-between">
           <div>
-            <h1>Письменные ответы</h1>
+            <h1>{t('candidate.essays_title')}</h1>
             <p>
-              Вопрос {current + 1} из {questions.length}
-              {draftKey ? ' · черновик сохраняется автоматически' : ''}
+              {draftKey
+                ? t('candidate.essays_subtitle', { current: current + 1, total: questions.length })
+                : t('candidate.essays_subtitle_no_draft', { current: current + 1, total: questions.length })
+              }
             </p>
           </div>
           <div className="progress-bar" style={{ width: 100 }}>
@@ -200,7 +205,7 @@ export default function CandidateQuestions() {
               key={i}
               className={`q-nav-tab ${i === current ? 'active' : ''} ${wordCount(answers[i]) >= WORDS_MIN ? 'done' : ''}`}
               onClick={() => { saveToApi(); setCurrent(i); }}
-              title={`Вопрос ${i + 1}${wordCount(answers[i]) > 0 ? ` · ${wordCount(answers[i])} сл.` : ''}`}
+              title={`${t('candidate.question_label', { num: i + 1 })}${wordCount(answers[i]) > 0 ? ` · ${wordCount(answers[i])} ${t('candidate.words')}` : ''}`}
             >
               {i + 1}
             </button>
@@ -208,12 +213,12 @@ export default function CandidateQuestions() {
         </div>
 
         <div className="question-card">
-          <div className="q-num">Вопрос {current + 1}</div>
+          <div className="q-num">{t('candidate.question_label', { num: current + 1 })}</div>
           <div className="q-text">{q?.text}</div>
 
           <textarea
             className="answer-area w-full"
-            placeholder="Введите ваш ответ (300–800 слов рекомендуется)..."
+            placeholder={t('candidate.answer_placeholder')}
             value={currentAnswer}
             onChange={e => handleAnswerChange(current, e.target.value)}
             style={{
@@ -229,7 +234,7 @@ export default function CandidateQuestions() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
               <WordCounter text={currentAnswer} />
               <span style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 600 }}>
-                {charCount} символов
+                {charCount} {t('candidate.chars_counter')}
               </span>
             </div>
 
@@ -239,7 +244,7 @@ export default function CandidateQuestions() {
                   className="btn btn-ghost btn-sm"
                   onClick={() => { saveToApi(); setCurrent(c => c - 1); }}
                 >
-                  ← Назад
+                  {t('candidate.prev')}
                 </button>
               )}
               {current < questions.length - 1 ? (
@@ -247,16 +252,16 @@ export default function CandidateQuestions() {
                   className="btn btn-primary btn-sm"
                   onClick={() => { saveToApi(); setCurrent(c => c + 1); }}
                 >
-                  Далее →
+                  {t('candidate.next')}
                 </button>
               ) : (
                 <button
                   className="btn btn-dark"
                   onClick={submit}
                   disabled={saving}
-                  title={!allFilled ? 'Заполните все ответы (мин. 300 слов)' : undefined}
+                  title={!allFilled ? t('candidate.words_hint') : undefined}
                 >
-                  {saving ? 'Сохранение...' : 'Отправить все ответы'}
+                  {saving ? t('candidate.saving') : t('candidate.submit_all')}
                 </button>
               )}
             </div>
@@ -271,7 +276,7 @@ export default function CandidateQuestions() {
               fontSize: 12, color: 'var(--red)', fontWeight: 600,
             }}>
               {answers.map((a, i) => wordCount(a) < WORDS_MIN
-                ? `Вопрос ${i + 1}: ${wordCount(a)} / ${WORDS_MIN} слов`
+                ? t('candidate.fill_warning_item', { num: i + 1, count: wordCount(a), min: WORDS_MIN })
                 : null
               ).filter(Boolean).join(' · ')}
             </div>

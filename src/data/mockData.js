@@ -29,7 +29,6 @@ export const INTERVIEW_QS = [
 export const COMM_NAV = [
   { id: 'dashboard',  iconKey: 'dashboard',  label: 'Дашборд' },
   { id: 'candidates', iconKey: 'users',       label: 'Кандидаты', badge: 3 },
-  { id: 'ai-chat',    iconKey: 'bot',         label: 'AI-ассистент' },
   { id: 'analytics',  iconKey: 'trendUp',     label: 'Аналитика' },
   { id: 'settings',   iconKey: 'settings',    label: 'Настройки' },
 ];

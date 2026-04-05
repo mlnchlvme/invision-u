@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminApi } from '../../api/admin';
 import BarChart from '../shared/BarChart';
 import StatusBadge from '../shared/StatusBadge';
@@ -32,9 +33,10 @@ function CandidateMiniCard({ candidate: c }) {
 }
 
 function ZoneRow({ zone, count, total, isSelected, onClick, candidates, loadingCandidates }) {
+  const { t } = useTranslation();
   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-  const ZONE_COLORS = { A: 'var(--accent)', B: 'var(--text)', C: 'var(--muted)' };
-  const zoneKey = zone.replace('Zone ', '').replace('Зона ', '');
+  const ZONE_COLORS = { A: 'var(--accent)', B: 'rgba(191, 241, 28, 0.37)', C: '#7a827059' };
+  const zoneKey = zone.replace('Zone ', '').replace('Зона ', '').replace('A аймағы', 'A').replace('B аймағы', 'B').replace('C аймағы', 'C');
   const color = ZONE_COLORS[zoneKey] || 'var(--accent)';
 
   return (
@@ -85,7 +87,7 @@ function ZoneRow({ zone, count, total, isSelected, onClick, candidates, loadingC
             [1, 2, 3].map(i => <div key={i} className="skeleton" style={{ height: 36, marginBottom: 6 }} />)
           ) : candidates.length === 0 ? (
             <p className="text-muted text-sm" style={{ padding: '8px 12px' }}>
-              Кандидаты не найдены
+              {t('analytics.no_candidates')}
             </p>
           ) : (
             <>
@@ -94,7 +96,7 @@ function ZoneRow({ zone, count, total, isSelected, onClick, candidates, loadingC
               ))}
               {candidates.length > 10 && (
                 <p className="text-muted text-sm" style={{ padding: '4px 12px', fontWeight: 600 }}>
-                  + ещё {candidates.length - 10} кандидатов
+                  {t('analytics.more', { count: candidates.length - 10 })}
                 </p>
               )}
             </>
@@ -107,6 +109,7 @@ function ZoneRow({ zone, count, total, isSelected, onClick, candidates, loadingC
 
 
 export default function CommAnalytics() {
+  const { t } = useTranslation();
   const [stats, setStats]                   = useState(null);
   const [loading, setLoading]               = useState(true);
   const [selectedZone, setSelectedZone]     = useState(null);
@@ -134,7 +137,7 @@ export default function CommAnalytics() {
       setZoneCandidates(
         Array.isArray(data) ? data : (data.applications || []),
       );
-    } catch {} 
+    } catch {}
     finally {
       setLoadingZone(false);
     }
@@ -152,8 +155,23 @@ export default function CommAnalytics() {
     ? Object.entries(stats.by_status).map(([l, v]) => ({ l, v }))
     : [];
 
+  const zoneOrder = { A: 1, B: 2, C: 3 };
+  const getZoneKey = (label) => label
+    .replace('Zone ', '')
+    .replace('Зона ', '')
+    .replace('A аймағы', 'A')
+    .replace('B аймағы', 'B')
+    .replace('C аймағы', 'C')
+    .trim();
+
   const byZone = stats?.by_zone
-    ? Object.entries(stats.by_zone).map(([l, v]) => ({ l, v }))
+    ? Object.entries(stats.by_zone)
+        .map(([l, v]) => ({ l, v }))
+        .sort((a, b) => {
+          const aKey = getZoneKey(a.l);
+          const bKey = getZoneKey(b.l);
+          return (zoneOrder[aKey] || 99) - (zoneOrder[bKey] || 99);
+        })
     : [];
 
   const avgScoreDisplay = stats?.avg_final_score != null
@@ -161,9 +179,9 @@ export default function CommAnalytics() {
     : '—';
 
   const kpis = [
-    { label: 'Всего заявок',     val: stats?.total_applications != null ? String(stats.total_applications) : '—' },
-    { label: 'Средний AI Score', val: avgScoreDisplay },
-    { label: 'AI-флагов',        val: stats?.ai_flagged != null ? String(stats.ai_flagged) : '—' },
+    { label: t('analytics.total'),     val: stats?.total_applications != null ? String(stats.total_applications) : '—' },
+    { label: t('analytics.avg_score'), val: avgScoreDisplay },
+    { label: t('analytics.ai_flagged'), val: stats?.ai_flagged != null ? String(stats.ai_flagged) : '—' },
   ];
 
   return (
@@ -172,8 +190,8 @@ export default function CommAnalytics() {
         <div className="flex items-center gap-8">
           <IconTrendUp size={18} />
           <div>
-            <h1>Аналитика</h1>
-            <p>Статистика приёмной кампании 2026</p>
+            <h1>{t('analytics.title')}</h1>
+            <p>{t('analytics.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -192,28 +210,28 @@ export default function CommAnalytics() {
           <div className="flex flex-wrap gap-12">
             {byStatus.length > 0 && (
               <div className="card" style={{ flex: '1 1 280px' }}>
-                <h3>По статусам</h3>
+                <h3>{t('analytics.by_status')}</h3>
                 <BarChart data={byStatus} />
               </div>
             )}
             {byZone.length > 0 && (
               <div className="card" style={{ flex: '1 1 280px' }}>
-                <h3>По зонам (AI Score)</h3>
+                <h3>{t('analytics.by_zone')}</h3>
                 <BarChart data={byZone} />
               </div>
             )}
           </div>
         ) : (
           <div className="card">
-            <p className="text-muted text-sm">Статистика загружается или недоступна</p>
+            <p className="text-muted text-sm">{t('analytics.no_data')}</p>
           </div>
         )}
 
         {byZone.length > 0 && (
           <div className="card">
-            <h3 style={{ marginBottom: 4 }}>Распределение по зонам</h3>
+            <h3 style={{ marginBottom: 4 }}>{t('analytics.zone_dist')}</h3>
             <p className="text-muted text-sm" style={{ marginBottom: 16 }}>
-              Нажмите на зону, чтобы увидеть список кандидатов
+              {t('analytics.zone_hint')}
             </p>
             {byZone.map((z, i) => {
               const zKey = z.l.replace('Zone ', '').replace('Зона ', '').trim();

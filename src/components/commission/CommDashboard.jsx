@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import StatusBadge from '../shared/StatusBadge';
 import RadarChart  from '../shared/RadarChart';
 import BarChart    from '../shared/BarChart';
@@ -9,6 +10,7 @@ import { IconFilter, IconDownload, IconChevronDown, IconChevronUp } from '../ico
 import { toast } from '../shared/Toast';
 
 export default function CommDashboard() {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(null);
   const [dashboard, setDashboard] = useState(null);
   const [decision, setDecision] = useState({});
@@ -29,9 +31,12 @@ export default function CommDashboard() {
         notes: '',
       });
       setDecision(d => ({ ...d, [appId]: decisionVal }));
-      toast(decisionVal === 'shortlist' ? 'Кандидат одобрен' : 'Кандидат отклонён', decisionVal === 'shortlist' ? 'success' : 'error');
+      toast(
+        decisionVal === 'shortlist' ? t('dashboard.decision_approved') : t('dashboard.decision_rejected'),
+        decisionVal === 'shortlist' ? 'success' : 'error',
+      );
     } catch (e) {
-      toast(e.message || 'Ошибка', 'error');
+      toast(e.message || t('dashboard.error'), 'error');
     }
     setSaving(s => ({ ...s, [appId]: false }));
   };
@@ -40,16 +45,16 @@ export default function CommDashboard() {
 
   const stats = dashboard
     ? [
-        { val: String(dashboard.total),           lbl: 'Всего заявок',    delta: `Зона A: ${dashboard.zone_a}`, color: 'var(--text)' },
-        { val: String(dashboard.pending_review),  lbl: 'На рассмотрении', delta: 'Среднее 2.4 дня',                color: 'var(--amber)' },
-        { val: String(dashboard.zone_a),          lbl: 'Зона A',          delta: 'Топ кандидаты',              color: 'var(--green)' },
-        { val: String(dashboard.zone_c),          lbl: 'Зона C',          delta: 'Требуют внимания',           color: 'var(--red)' },
+        { val: String(dashboard.total),          lbl: t('dashboard.total'),   delta: t('dashboard.zone_a_delta', { count: dashboard.zone_a }), color: 'var(--text)' },
+        { val: String(dashboard.pending_review), lbl: t('dashboard.pending'), delta: t('dashboard.pending_delta'),                              color: 'var(--amber)' },
+        { val: String(dashboard.zone_a),         lbl: t('dashboard.zone_a'),  delta: t('dashboard.zone_a_hint'),                               color: 'var(--green)' },
+        { val: String(dashboard.zone_c),         lbl: t('dashboard.zone_c'),  delta: t('dashboard.zone_c_hint'),                               color: 'var(--red)' },
       ]
     : [
-        { val: '—', lbl: 'Всего заявок',    delta: 'загрузка...', color: 'var(--text)' },
-        { val: '—', lbl: 'На рассмотрении', delta: 'загрузка...', color: 'var(--amber)' },
-        { val: '—', lbl: 'Зона A',          delta: 'загрузка...', color: 'var(--green)' },
-        { val: '—', lbl: 'Зона C',          delta: 'загрузка...', color: 'var(--red)' },
+        { val: '—', lbl: t('dashboard.total'),   delta: t('dashboard.loading'), color: 'var(--text)' },
+        { val: '—', lbl: t('dashboard.pending'), delta: t('dashboard.loading'), color: 'var(--amber)' },
+        { val: '—', lbl: t('dashboard.zone_a'),  delta: t('dashboard.loading'), color: 'var(--green)' },
+        { val: '—', lbl: t('dashboard.zone_c'),  delta: t('dashboard.loading'), color: 'var(--red)' },
       ];
 
   const byProgram = dashboard?.by_program
@@ -58,10 +63,10 @@ export default function CommDashboard() {
 
   const funnel = dashboard
     ? [
-        { lbl: 'Подали заявку',     v: dashboard.total,           max: dashboard.total },
-        { lbl: 'AI-этап пройден',   v: dashboard.ai_completed ?? 0, max: dashboard.total },
-        { lbl: 'Ревью комиссии',    v: dashboard.pending_review ?? 0, max: dashboard.total },
-        { lbl: 'Финальное решение', v: (dashboard.zone_a ?? 0) + (dashboard.zone_c ?? 0), max: dashboard.total },
+        { lbl: t('dashboard.funnel_applied'),  v: dashboard.total,             max: dashboard.total },
+        { lbl: t('dashboard.funnel_ai'),       v: dashboard.ai_completed ?? 0, max: dashboard.total },
+        { lbl: t('dashboard.funnel_review'),   v: dashboard.pending_review ?? 0, max: dashboard.total },
+        { lbl: t('dashboard.funnel_decision'), v: (dashboard.zone_a ?? 0) + (dashboard.zone_c ?? 0), max: dashboard.total },
       ]
     : [];
 
@@ -70,8 +75,8 @@ export default function CommDashboard() {
       <div className="page-header">
         <div className="flex items-center justify-between flex-wrap gap-8">
           <div>
-            <h1>Дашборд комиссии</h1>
-            <p>Приёмная кампания · Foundation Year 2026</p>
+            <h1>{t('dashboard.title')}</h1>
+            <p>{t('dashboard.subtitle')}</p>
           </div>
         </div>
       </div>
@@ -89,16 +94,16 @@ export default function CommDashboard() {
 
         <div className="flex flex-wrap gap-12">
           <div className="card" style={{ flex: '1 1 300px' }}>
-            <h3>Заявки по направлениям</h3>
+            <h3>{t('dashboard.by_program')}</h3>
             {byProgram.length > 0 ? (
               <BarChart data={byProgram} />
             ) : (
-              <p className="text-muted text-sm">Данные загружаются...</p>
+              <p className="text-muted text-sm">{t('dashboard.data_loading')}</p>
             )}
           </div>
 
           <div className="card" style={{ flex: '1 1 220px' }}>
-            <h3>Воронка отбора</h3>
+            <h3>{t('dashboard.funnel')}</h3>
             {funnel.length > 0 ? funnel.map((f, i) => (
               <div key={i} style={{ marginBottom: 10 }}>
                 <div className="flex justify-between text-sm" style={{ fontWeight: 600 }}>
@@ -110,36 +115,36 @@ export default function CommDashboard() {
                 </div>
               </div>
             )) : (
-              <p className="text-muted text-sm">Данные загружаются...</p>
+              <p className="text-muted text-sm">{t('dashboard.data_loading')}</p>
             )}
           </div>
         </div>
 
         <div className="card">
           <div className="flex justify-between items-center" style={{ marginBottom: 14 }}>
-            <h3 style={{ marginBottom: 0 }}>Последние заявки</h3>
+            <h3 style={{ marginBottom: 0 }}>{t('dashboard.recent')}</h3>
             <div className="flex gap-8">
-              <button className="btn btn-ghost btn-sm" onClick={() => adminApi.export().catch(() => toast('Ошибка экспорта', 'error'))}>
+              <button className="btn btn-ghost btn-sm" onClick={() => adminApi.export().catch(() => toast(t('dashboard.export_error'), 'error'))}>
                 <IconDownload size={12} />
-                Экспорт
+                {t('dashboard.export')}
               </button>
             </div>
           </div>
 
           {candidates.length === 0 ? (
             <p className="text-muted text-sm" style={{ padding: '12px 0' }}>
-              {dashboard === null ? 'Загрузка данных...' : 'Нет кандидатов для отображения'}
+              {dashboard === null ? t('dashboard.data_loading') : t('dashboard.no_candidates')}
             </p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table className="tbl">
                 <thead>
                   <tr>
-                    <th>Кандидат</th>
-                    <th>Направление</th>
-                    <th>AI Score</th>
-                    <th>Город</th>
-                    <th>Статус</th>
+                    <th>{t('dashboard.col_candidate')}</th>
+                    <th>{t('dashboard.col_program')}</th>
+                    <th>{t('dashboard.col_score')}</th>
+                    <th>{t('dashboard.col_city')}</th>
+                    <th>{t('dashboard.col_status')}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -174,23 +179,23 @@ export default function CommDashboard() {
                               <div>
                                 {c.drive_scores ? (
                                   <>
-                                    <p className="section-title">AI-профиль компетенций</p>
+                                    <p className="section-title">{t('dashboard.drive_profile')}</p>
                                     <RadarChart data={c.drive_scores} />
                                   </>
                                 ) : (
-                                  <p className="text-muted text-sm">D.R.I.V.E. оценки недоступны</p>
+                                  <p className="text-muted text-sm">{t('dashboard.drive_unavailable')}</p>
                                 )}
                               </div>
                               <div>
                                 {c.drive_scores ? (
                                   <>
-                                    <p className="section-title">Оценки по D.R.I.V.E.</p>
+                                    <p className="section-title">{t('dashboard.drive_scores')}</p>
                                     {[
-                                      ['Disciplined Resilience',   c.drive_scores?.D],
-                                      ['Responsible Innovation',   c.drive_scores?.R],
-                                      ['Insightful Vision',        c.drive_scores?.I],
-                                      ['Values-Driven Leadership', c.drive_scores?.V],
-                                      ['Entrepreneurial Execution',c.drive_scores?.E],
+                                      ['Disciplined Resilience',    c.drive_scores?.D],
+                                      ['Responsible Innovation',    c.drive_scores?.R],
+                                      ['Insightful Vision',         c.drive_scores?.I],
+                                      ['Values-Driven Leadership',  c.drive_scores?.V],
+                                      ['Entrepreneurial Execution', c.drive_scores?.E],
                                     ].map(([k, v]) => (
                                       <div key={k} style={{ marginBottom: 9 }}>
                                         <div className="flex justify-between text-sm" style={{ fontWeight: 600 }}>
@@ -210,16 +215,16 @@ export default function CommDashboard() {
                                     disabled={!!saving[c.id] || decision[c.id] === 'shortlist'}
                                     onClick={() => makeDecision(c.id, 'shortlist', true)}
                                   >
-                                    {decision[c.id] === 'shortlist' ? 'Одобрено' : 'Одобрить'}
+                                    {decision[c.id] === 'shortlist' ? t('dashboard.approved') : t('dashboard.approve')}
                                   </button>
                                   <button
                                     className="btn btn-red btn-sm"
                                     disabled={!!saving[c.id] || decision[c.id] === 'reject'}
                                     onClick={() => makeDecision(c.id, 'reject', false)}
                                   >
-                                    {decision[c.id] === 'reject' ? 'Отказано' : 'Отказать'}
+                                    {decision[c.id] === 'reject' ? t('dashboard.rejected') : t('dashboard.reject')}
                                   </button>
-                                  <button className="btn btn-ghost btn-sm">Запросить инфо</button>
+                                  <button className="btn btn-ghost btn-sm">{t('dashboard.request_info')}</button>
                                 </div>
                               </div>
                             </div>

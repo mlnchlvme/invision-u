@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import StatusBadge from '../shared/StatusBadge';
 import RadarChart  from '../shared/RadarChart';
 import { adminApi } from '../../api/admin';
@@ -16,16 +17,21 @@ const PER_PAGE = 20;
 
 
 function ScoreBar({ label, value, max = 10 }) {
+  const { t } = useTranslation();
   const pct = value != null ? Math.min((value / max) * 100, 100) : 0;
+
+  // These keys map to competency names — they are data labels from the API,
+  // not UI strings, so we keep a local map but translate what we can.
   const LABELS = {
-    leadership:           'Лидерство',
-    motivation:           'Мотивация',
-    perseverance:         'Настойчивость',
-    teamwork:             'Командная работа',
-    goal_pursuit:         'Целеустремлённость',
-    intrinsic_motivation: 'Внутр. мотивация',
-    prosocial_purpose:    'Соц. ответственность',
+    leadership:           t('candidates.leadership_title'),
+    motivation:           'Motivation',
+    perseverance:         'Perseverance',
+    teamwork:             'Teamwork',
+    goal_pursuit:         'Goal Pursuit',
+    intrinsic_motivation: 'Intrinsic Motivation',
+    prosocial_purpose:    'Prosocial Purpose',
   };
+
   return (
     <div style={{ marginBottom: 8 }}>
       <div className="flex justify-between text-sm" style={{ fontWeight: 600, marginBottom: 3 }}>
@@ -42,12 +48,13 @@ function ScoreBar({ label, value, max = 10 }) {
 }
 
 function AiDetector({ data }) {
+  const { t } = useTranslation();
   if (!data) return null;
   const isHighRisk = data.ai_prob != null && data.ai_prob > 0.7;
   return (
     <div className="card ai-detector" style={{ marginBottom: 0 }}>
       <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--muted)', marginBottom: 10 }}>
-        AI-детектор текста
+        {t('candidates.ai_detector')}
       </h4>
       {[
         ['Perplexity',    data.perplexity  != null ? data.perplexity.toFixed(1)  : '—'],
@@ -73,7 +80,7 @@ function AiDetector({ data }) {
           background: 'rgba(234,84,85,.10)', color: 'var(--red)',
           fontSize: 11, fontWeight: 700,
         }}>
-          ⚠ Высокий риск AI-генерации текста
+          {t('candidates.ai_high_risk')}
         </div>
       )}
     </div>
@@ -81,12 +88,13 @@ function AiDetector({ data }) {
 }
 
 function EssayBlock({ answers }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(null);
   if (!answers?.length) return null;
   return (
     <div className="card" style={{ marginBottom: 0 }}>
       <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--muted)', marginBottom: 10 }}>
-        Письменные ответы ({answers.length})
+        {t('candidates.essays_title')} ({answers.length})
       </h4>
       {answers.map((ans, i) => (
         <div key={i} style={{ marginBottom: 8 }}>
@@ -100,7 +108,7 @@ function EssayBlock({ answers }) {
               fontSize: 12, fontWeight: 700, color: 'var(--text)',
             }}
           >
-            <span>Эссе {i + 1}{ans.question_id ? ` · ${ans.question_id}` : ''}</span>
+            <span>{t('candidates.essay_item', { num: i + 1 })}{ans.question_id ? ` · ${ans.question_id}` : ''}</span>
             {open === i ? <IconChevronUp size={13} /> : <IconChevronDown size={13} />}
           </button>
           {open === i && (
@@ -110,11 +118,11 @@ function EssayBlock({ answers }) {
               fontSize: 12, lineHeight: 1.65, color: 'var(--muted)',
               whiteSpace: 'pre-wrap', wordBreak: 'break-word',
             }}>
-              {ans.text || '(нет текста)'}
+              {ans.text || t('candidates.essay_no_text')}
               {ans.transcript && (
                 <details style={{ marginTop: 8 }}>
                   <summary style={{ cursor: 'pointer', fontWeight: 700, color: 'var(--accent)', fontSize: 11 }}>
-                    Транскрипт
+                    {t('candidates.essay_transcript')}
                   </summary>
                   <p style={{ marginTop: 6 }}>{ans.transcript}</p>
                 </details>
@@ -128,11 +136,12 @@ function EssayBlock({ answers }) {
 }
 
 function VideoBlock({ videoUrl, transcript }) {
+  const { t } = useTranslation();
   if (!videoUrl) return null;
   return (
     <div className="card" style={{ marginBottom: 0 }}>
       <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--muted)', marginBottom: 10 }}>
-        Видео-представление
+        {t('candidates.video_title')}
       </h4>
       <video
         src={videoUrl}
@@ -142,7 +151,7 @@ function VideoBlock({ videoUrl, transcript }) {
       {transcript && (
         <details style={{ marginTop: 10 }}>
           <summary style={{ cursor: 'pointer', fontSize: 12, fontWeight: 700, color: 'var(--accent)' }}>
-            Транскрипт (Whisper)
+            {t('candidates.video_transcript')}
           </summary>
           <p style={{
             marginTop: 8, fontSize: 12, lineHeight: 1.65, color: 'var(--muted)',
@@ -157,18 +166,19 @@ function VideoBlock({ videoUrl, transcript }) {
 }
 
 function InterviewBlock({ transcript }) {
+  const { t } = useTranslation();
   if (!transcript) return null;
   return (
     <div className="card" style={{ marginBottom: 0 }}>
       <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--muted)', marginBottom: 10 }}>
-        Диалог AI-интервью
+        {t('candidates.interview_title')}
       </h4>
       <div style={{ maxHeight: 200, overflowY: 'auto', fontSize: 12, lineHeight: 1.65, color: 'var(--muted)' }}>
         {Array.isArray(transcript)
           ? transcript.map((msg, i) => (
             <div key={i} style={{ marginBottom: 8 }}>
               <span style={{ fontWeight: 700, color: msg.role === 'ai' ? 'var(--accent)' : 'var(--text)' }}>
-                {msg.role === 'ai' ? 'AI: ' : 'Кандидат: '}
+                {msg.role === 'ai' ? t('candidates.role_ai') : t('candidates.role_candidate')}
               </span>
               {msg.text}
             </div>
@@ -182,6 +192,7 @@ function InterviewBlock({ transcript }) {
 
 
 function CandidateDetail({ c, onDecision, saving, decisionState }) {
+  const { t } = useTranslation();
   const [detail, setDetail] = useState(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
@@ -222,13 +233,8 @@ function CandidateDetail({ c, onDecision, saving, decisionState }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
         <div className="card" style={{ marginBottom: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: d.zone_explanation ? 10 : 0 }}>
-            <span
-              style={{
-                fontSize: 20, fontWeight: 900, fontFamily: 'var(--font)',
-                color: scoreColor(d.final_score), letterSpacing: '-0.03em',
-              }}
-            >
-              Зона {scoreZone(d.final_score)}
+            <span style={{ fontSize: 20, fontWeight: 900, fontFamily: 'var(--font)', color: scoreColor(d.final_score), letterSpacing: '-0.03em' }}>
+              {t('candidates.zone_prefix')} {scoreZone(d.final_score)}
             </span>
             <span className="mono" style={{ fontSize: 22, fontWeight: 900, color: scoreColor(d.final_score) }}>
               {displayScore(d.final_score)}
@@ -242,13 +248,13 @@ function CandidateDetail({ c, onDecision, saving, decisionState }) {
 
           <div style={{ marginTop: 12 }}>
             {[
-              ['Имя',       d.full_name],
-              ['Программа', d.program],
-              ['Город',     d.city],
-              ['Школа',     d.school_name || detail?.documents?.school_name],
-              ['ЕНТ',       detail?.documents?.ent_score],
-              ['GPA',       detail?.documents?.gpa],
-              ['IELTS',     detail?.documents?.ielts_score],
+              [t('candidates.field_name'),    d.full_name],
+              [t('candidates.field_program'), d.program],
+              [t('candidates.field_city'),    d.city],
+              [t('candidates.field_school'),  d.school_name || detail?.documents?.school_name],
+              [t('candidates.field_ent'),     detail?.documents?.ent_score],
+              [t('candidates.field_gpa'),     detail?.documents?.gpa],
+              [t('candidates.field_ielts'),   detail?.documents?.ielts_score],
             ].filter(([, v]) => v != null && v !== '').map(([k, v]) => (
               <div key={k} className="flex justify-between text-sm" style={{ marginBottom: 5 }}>
                 <span className="text-muted" style={{ fontWeight: 600 }}>{k}</span>
@@ -261,7 +267,7 @@ function CandidateDetail({ c, onDecision, saving, decisionState }) {
         {scores7 ? (
           <div className="card" style={{ marginBottom: 0 }}>
             <h4 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--muted)', marginBottom: 10 }}>
-              Качества лидерства
+              {t('candidates.leadership_title')}
             </h4>
             {Object.keys(scores7).length >= 3 && (
               <RadarChart data={scores7} />
@@ -275,7 +281,7 @@ function CandidateDetail({ c, onDecision, saving, decisionState }) {
         ) : (
           !loadingDetail && (
             <div className="card" style={{ marginBottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <p className="text-muted text-sm">D.R.I.V.E. оценки недоступны</p>
+              <p className="text-muted text-sm">{t('candidates.drive_unavailable')}</p>
             </div>
           )
         )}
@@ -296,16 +302,16 @@ function CandidateDetail({ c, onDecision, saving, decisionState }) {
           disabled={!!saving || decisionState === 'shortlist'}
           onClick={() => onDecision(c.id, 'shortlist', true)}
         >
-          {saving ? '...' : decisionState === 'shortlist' ? 'Одобрено' : 'Одобрить'}
+          {saving ? '...' : decisionState === 'shortlist' ? t('candidates.approved') : t('candidates.approve')}
         </button>
         <button
           className="btn btn-red btn-sm"
           disabled={!!saving || decisionState === 'reject'}
           onClick={() => onDecision(c.id, 'reject', false)}
         >
-          {saving ? '...' : decisionState === 'reject' ? 'Отказано' : 'Отказать'}
+          {saving ? '...' : decisionState === 'reject' ? t('candidates.rejected') : t('candidates.reject')}
         </button>
-        <button className="btn btn-ghost btn-sm">Запросить инфо</button>
+        <button className="btn btn-ghost btn-sm">{t('candidates.request_info')}</button>
       </div>
     </div>
   );
@@ -313,6 +319,7 @@ function CandidateDetail({ c, onDecision, saving, decisionState }) {
 
 
 export default function CommCandidates() {
+  const { t } = useTranslation();
   const [candidates, setCandidates] = useState([]);
   const [total, setTotal]           = useState(0);
   const [loading, setLoading]       = useState(true);
@@ -345,7 +352,7 @@ export default function CommCandidates() {
           setTotal(data.total || 0);
         }
       })
-      .catch(() => toast('Ошибка загрузки кандидатов', 'error'))
+      .catch(() => toast(t('candidates.load_error'), 'error'))
       .finally(() => setLoading(false));
   }, [search, zone, status, program, page]);
 
@@ -362,12 +369,12 @@ export default function CommCandidates() {
       });
       setDecision(d => ({ ...d, [appId]: decisionVal }));
       toast(
-        decisionVal === 'shortlist' ? 'Кандидат одобрен' : 'Кандидат отклонён',
+        decisionVal === 'shortlist' ? t('candidates.decision_approved') : t('candidates.decision_rejected'),
         decisionVal === 'shortlist' ? 'success' : 'error',
       );
       load();
     } catch (e) {
-      toast(e.message || 'Ошибка', 'error');
+      toast(e.message || t('common.error_generic'), 'error');
     }
     setSaving(s => ({ ...s, [appId]: false }));
   };
@@ -379,15 +386,19 @@ export default function CommCandidates() {
       <div className="page-header">
         <div className="flex items-center justify-between flex-wrap gap-8">
           <div>
-            <h1>Кандидаты</h1>
-            <p>Все заявки · Foundation Year 2026{total > 0 ? ` · ${total} всего` : ''}</p>
+            <h1>{t('candidates.title')}</h1>
+            <p>
+              {total > 0
+                ? t('candidates.subtitle_total', { total })
+                : t('candidates.subtitle')}
+            </p>
           </div>
           <button
             className="btn btn-ghost btn-sm"
-            onClick={() => adminApi.export().catch(() => toast('Ошибка экспорта', 'error'))}
+            onClick={() => adminApi.export().catch(() => toast(t('candidates.export_error'), 'error'))}
           >
             <IconDownload size={12} />
-            Экспорт CSV
+            {t('dashboard.export_csv')}
           </button>
         </div>
       </div>
@@ -402,7 +413,7 @@ export default function CommCandidates() {
               />
               <input
                 type="text"
-                placeholder="Поиск по имени или городу..."
+                placeholder={t('candidates.search_placeholder')}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 style={{
@@ -418,38 +429,38 @@ export default function CommCandidates() {
             </div>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowFilters(f => !f)}>
               <IconFilter size={12} />
-              Фильтры{(zone || status || program) ? ' ●' : ''}
+              {t('candidates.filters')}{(zone || status || program) ? ' ●' : ''}
             </button>
           </div>
 
           {showFilters && (
             <div className="flex gap-8 flex-wrap" style={{ marginTop: 12 }}>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Зона</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>{t('candidates.zone_label')}</div>
                 <div className="flex gap-6">
                   {ZONES.map(z => (
                     <button key={z || 'all'} className={`btn btn-sm ${zone === z ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setZone(z)}>
-                      {z || 'Все'}
+                      {z || t('common.all')}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Статус</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>{t('candidates.status_label')}</div>
                 <div className="flex gap-6 flex-wrap">
                   {STATUSES.map(s => (
                     <button key={s || 'all'} className={`btn btn-sm ${status === s ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setStatus(s)}>
-                      {s || 'Все'}
+                      {s || t('common.all')}
                     </button>
                   ))}
                 </div>
               </div>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>Программа</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>{t('candidates.program_label')}</div>
                 <div className="flex gap-6 flex-wrap">
                   {PROGRAMS.map(pr => (
                     <button key={pr || 'all'} className={`btn btn-sm ${program === pr ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setProgram(pr)}>
-                      {pr || 'Все'}
+                      {pr || t('common.all')}
                     </button>
                   ))}
                 </div>
@@ -457,7 +468,7 @@ export default function CommCandidates() {
               {(zone || status || program) && (
                 <div style={{ alignSelf: 'flex-end' }}>
                   <button className="btn btn-ghost btn-sm" onClick={() => { setZone(''); setStatus(''); setProgram(''); }}>
-                    Сбросить
+                    {t('common.reset')}
                   </button>
                 </div>
               )}
@@ -471,18 +482,18 @@ export default function CommCandidates() {
               {[1, 2, 3, 4, 5].map(i => <div key={i} className="skeleton" style={{ height: 44, marginBottom: 8 }} />)}
             </div>
           ) : candidates.length === 0 ? (
-            <p className="text-muted text-sm" style={{ padding: '12px 0' }}>Кандидаты не найдены</p>
+            <p className="text-muted text-sm" style={{ padding: '12px 0' }}>{t('candidates.not_found')}</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table className="tbl">
                 <thead>
                   <tr>
-                    <th>Кандидат</th>
-                    <th>Направление</th>
-                    <th>AI Score</th>
-                    <th>Зона</th>
-                    <th>Город</th>
-                    <th>Статус</th>
+                    <th>{t('candidates.col_candidate')}</th>
+                    <th>{t('candidates.col_program')}</th>
+                    <th>{t('candidates.col_score')}</th>
+                    <th>{t('candidates.col_zone')}</th>
+                    <th>{t('candidates.col_city')}</th>
+                    <th>{t('candidates.col_status')}</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -537,14 +548,14 @@ export default function CommCandidates() {
           {totalPages > 1 && (
             <div className="flex justify-between items-center" style={{ marginTop: 16, fontSize: 13 }}>
               <span className="text-muted" style={{ fontWeight: 600 }}>
-                Стр. {page} из {totalPages} · {total} кандидатов
+                {t('candidates.page_info', { page, total: totalPages, count: total })}
               </span>
               <div className="flex gap-6">
                 <button className="btn btn-ghost btn-sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-                  ← Назад
+                  {t('candidates.prev')}
                 </button>
                 <button className="btn btn-ghost btn-sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-                  Вперёд →
+                  {t('candidates.next')}
                 </button>
               </div>
             </div>
