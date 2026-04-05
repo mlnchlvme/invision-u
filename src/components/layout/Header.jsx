@@ -13,9 +13,10 @@ const LANGS = [
 function LangSwitcher() {
   const { i18n } = useTranslation();
   const [open, setOpen] = useState(false);
+  const [lang, setLang] = useState(
+    () => localStorage.getItem('app_lang') || 'ru',
+  );
   const ref = useRef(null);
-
-  const lang = i18n.language?.slice(0, 2) || 'ru';
 
   useEffect(() => {
     function handleOutside(e) {
@@ -26,6 +27,8 @@ function LangSwitcher() {
   }, []);
 
   const handleSelect = (code) => {
+    localStorage.setItem('app_lang', code);
+    setLang(code);
     i18n.changeLanguage(code);
     setOpen(false);
   };
