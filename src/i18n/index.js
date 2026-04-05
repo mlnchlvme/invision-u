@@ -18,7 +18,9 @@ i18n
     lng: savedLang,
     fallbackLng: 'ru',
     supportedLngs: ['ru', 'en', 'kz'],
-    interpolation: { escapeValue: false },
+    interpolation: {
+      escapeValue: false,
+    },
   });
 
 export default i18n;

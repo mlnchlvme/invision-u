@@ -13,19 +13,17 @@ const LANGS = [
 function LangSwitcher() {
   const { i18n } = useTranslation();
   const [open, setOpen] = useState(false);
-  // Собственный стейт — не зависит от i18n.language,
-  // гарантирует ре-рендер флага сразу при выборе
   const [lang, setLang] = useState(
     () => localStorage.getItem('app_lang') || 'ru',
   );
   const ref = useRef(null);
 
   useEffect(() => {
-    function onOutside(e) {
+    function handleOutside(e) {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
     }
-    document.addEventListener('mousedown', onOutside);
-    return () => document.removeEventListener('mousedown', onOutside);
+    document.addEventListener('mousedown', handleOutside);
+    return () => document.removeEventListener('mousedown', handleOutside);
   }, []);
 
   const handleSelect = (code) => {
