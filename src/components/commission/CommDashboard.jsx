@@ -40,8 +40,8 @@ export default function CommDashboard() {
 
   const stats = dashboard
     ? [
-        { val: String(dashboard.total),           lbl: 'Всего заявок',    delta: `Zone A: ${dashboard.zone_a}`, color: 'var(--text)' },
-        { val: String(dashboard.pending_review),  lbl: 'На рассмотрении', delta: 'avg 2.4 дня',                color: 'var(--amber)' },
+        { val: String(dashboard.total),           lbl: 'Всего заявок',    delta: `Зона A: ${dashboard.zone_a}`, color: 'var(--text)' },
+        { val: String(dashboard.pending_review),  lbl: 'На рассмотрении', delta: 'Среднее 2.4 дня',                color: 'var(--amber)' },
         { val: String(dashboard.zone_a),          lbl: 'Зона A',          delta: 'Топ кандидаты',              color: 'var(--green)' },
         { val: String(dashboard.zone_c),          lbl: 'Зона C',          delta: 'Требуют внимания',           color: 'var(--red)' },
       ]
@@ -73,7 +73,6 @@ export default function CommDashboard() {
             <h1>Дашборд комиссии</h1>
             <p>Приёмная кампания · Foundation Year 2026</p>
           </div>
-          <StatusBadge status="review" />
         </div>
       </div>
 

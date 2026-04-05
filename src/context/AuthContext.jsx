@@ -1,12 +1,22 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { authApi } from '../api/auth';
 import { applicationsApi } from '../api/applications';
+import { setLogoutCallback } from '../api/client';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUser]       = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const logout = () => {
+    localStorage.clear();
+    setUser(null);
+  };
+
+  useEffect(() => {
+    setLogoutCallback(logout);
+  }, []);
 
   useEffect(() => {
     const token    = localStorage.getItem('access_token');
@@ -24,11 +34,11 @@ export function AuthProvider({ children }) {
     localStorage.setItem('user_id', data.user_id);
     if (name) localStorage.setItem('full_name', name);
     setUser({
-      token: data.access_token,
-      role: data.role,
-      userId: data.user_id,
+      token:    data.access_token,
+      role:     data.role,
+      userId:   data.user_id,
       fullName: name || '',
-      appId: localStorage.getItem('app_id') || null,
+      appId:    localStorage.getItem('app_id') || null,
     });
   };
 
@@ -59,13 +69,24 @@ export function AuthProvider({ children }) {
     setUser(u => ({ ...u, appId: id }));
   };
 
-  const logout = () => {
-    localStorage.clear();
-    setUser(null);
+  const createApplicationIfMissing = async () => {
+    if (user?.appId) return user.appId;
+    try {
+      const app = await applicationsApi.create({ program: 'foundation', country: 'KZ', city: '' });
+      setAppId(app.id);
+      return app.id;
+    } catch {
+      return null;
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, setFullName, setAppId }}>
+    <AuthContext.Provider value={{
+      user, loading,
+      login, register, logout,
+      setFullName, setAppId,
+      createApplicationIfMissing,
+    }}>
       {children}
     </AuthContext.Provider>
   );
