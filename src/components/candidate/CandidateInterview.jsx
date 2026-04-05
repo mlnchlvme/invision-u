@@ -2,18 +2,26 @@ import { useState, useEffect, useRef } from 'react';
 import '../../styles/components/Chat.css';
 import { interviewApi } from '../../api/interview';
 import { useAuth } from '../../context/AuthContext';
-import { INTERVIEW_QS, AI_FOLLOW } from '../../data/mockData';
+import { INTERVIEW_QS } from '../../data/mockData';
 import { IconSend } from '../icons';
+
+// Fallback-уточняющие вопросы (локально, без mockData)
+const FALLBACK_FOLLOW = [
+  'Интересно! Можете привести конкретный пример из вашей жизни?',
+  'Каков был измеримый результат ваших действий?',
+  'Что бы вы сделали иначе, если бы оказались в этой ситуации снова?',
+  'Как этот опыт изменил ваши взгляды или подход к жизни?',
+];
 
 export default function CandidateInterview() {
   const { user } = useAuth();
-  const [msgs, setMsgs] = useState([]);
-  const [input, setInput] = useState('');
-  const [typing, setTyping] = useState(false);
-  const [done, setDone] = useState(false);
+  const [msgs, setMsgs]         = useState([]);
+  const [input, setInput]       = useState('');
+  const [typing, setTyping]     = useState(false);
+  const [done, setDone]         = useState(false);
   const [interviewId, setInterviewId] = useState(null);
   const [progress, setProgress] = useState({ current: 1, total: 5 });
-  const [qIndex, setQIndex] = useState(0);
+  const [qIndex, setQIndex]     = useState(0);
   const bottomRef = useRef(null);
 
   useEffect(() => {
@@ -60,7 +68,8 @@ export default function CandidateInterview() {
     if (nextQ < INTERVIEW_QS.length) {
       const follow = Math.random() > 0.4;
       if (follow) {
-        setMsgs(m => [...m, { role: 'ai', text: AI_FOLLOW[Math.floor(Math.random() * AI_FOLLOW.length)] }]);
+        const followUp = FALLBACK_FOLLOW[Math.floor(Math.random() * FALLBACK_FOLLOW.length)];
+        setMsgs(m => [...m, { role: 'ai', text: followUp }]);
       } else {
         setQIndex(nextQ);
         setProgress(p => ({ ...p, current: nextQ + 1 }));

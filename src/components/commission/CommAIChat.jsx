@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import '../../styles/components/Chat.css';
-import { COMM_AI_INIT, AI_REPLIES } from '../../data/mockData';
+import { COMM_AI_INIT } from '../../data/mockData';
+import { adminApi } from '../../api/admin';
 import { IconBot, IconSend, IconZap } from '../icons';
 
 const QUICK_PROMPTS = [
@@ -10,26 +11,71 @@ const QUICK_PROMPTS = [
   'Средний балл UNT',
 ];
 
+// Формируем контекст из данных дашборда для системного промпта
+function buildSystemPrompt(dashboardData) {
+  const base = 'Ты AI-ассистент приёмной комиссии образовательной программы inVision U (Foundation Year 2026). Отвечай кратко и по делу на русском языке. Помогай анализировать данные кандидатов, формировать сводки, давать рекомендации по отбору.';
+  if (!dashboardData) return base;
+  return `${base}\n\nТекущие данные кампании: всего заявок — ${dashboardData.total ?? '?'}, на рассмотрении — ${dashboardData.pending_review ?? '?'}, зона A — ${dashboardData.zone_a ?? '?'}, зона C — ${dashboardData.zone_c ?? '?'}.`;
+}
+
 export default function CommAIChat() {
-  const [msgs, setMsgs]     = useState(COMM_AI_INIT);
-  const [input, setInput]   = useState('');
-  const [typing, setTyping] = useState(false);
+  const [msgs, setMsgs]         = useState(COMM_AI_INIT);
+  const [input, setInput]       = useState('');
+  const [typing, setTyping]     = useState(false);
+  const [dashboardData, setDashboardData] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [msgs, typing]);
 
-  const send = (text) => {
+  // Загружаем данные дашборда для контекста AI
+  useEffect(() => {
+    adminApi.dashboard()
+      .then(setDashboardData)
+      .catch(() => {});
+  }, []);
+
+  const send = async (text) => {
     const q = (text || input).trim();
-    if (!q) return;
+    if (!q || typing) return;
     setInput('');
-    setMsgs(m => [...m, { role: 'user', text: q }]);
+
+    const userMsg = { role: 'user', text: q };
+    setMsgs(m => [...m, userMsg]);
     setTyping(true);
-    setTimeout(() => {
+
+    // Формируем историю для API (без системного сообщения приветствия)
+    const history = [...msgs.slice(1), userMsg].map(m => ({
+      role: m.role === 'ai' ? 'assistant' : 'user',
+      content: m.text,
+    }));
+
+    try {
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: buildSystemPrompt(dashboardData),
+          messages: history,
+        }),
+      });
+
+      if (!response.ok) throw new Error('API error');
+
+      const data = await response.json();
+      const aiText = data.content?.find(b => b.type === 'text')?.text || 'Не удалось получить ответ.';
+      setMsgs(m => [...m, { role: 'ai', text: aiText }]);
+    } catch {
+      setMsgs(m => [...m, {
+        role: 'ai',
+        text: 'Сейчас не могу обратиться к AI. Проверьте подключение или попробуйте позже.',
+      }]);
+    } finally {
       setTyping(false);
-      setMsgs(m => [...m, { role: 'ai', text: AI_REPLIES[Math.floor(Math.random() * AI_REPLIES.length)] }]);
-    }, 1200 + Math.random() * 800);
+    }
   };
 
   return (
@@ -80,7 +126,7 @@ export default function CommAIChat() {
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && send()}
         />
-        <button className="btn btn-primary" onClick={() => send()}>
+        <button className="btn btn-primary" onClick={() => send()} disabled={typing || !input.trim()}>
           <IconSend size={14} />
           Отправить
         </button>
