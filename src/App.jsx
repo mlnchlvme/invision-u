@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import './styles/global.css';
 import './styles/components/Layout.css';
+import './i18n';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './components/shared/Toast';
+import { ErrorBoundary, NoApplicationScreen } from './components/shared/ErrorBoundary';
 
 import Landing  from './pages/Landing';
 import AuthPage from './pages/Auth';
@@ -37,7 +39,7 @@ function UnderConstruction() {
 function renderPage(role, page) {
   if (role === 'reviewer') {
     if (page === 'dashboard')  return <CommDashboard />;
-    if (page === 'candidates') return <CommCandidates />;  // отдельный компонент
+    if (page === 'candidates') return <CommCandidates />;
     if (page === 'ai-chat')    return <CommAIChat />;
     if (page === 'settings')   return <CommSettings />;
     if (page === 'analytics')  return <CommAnalytics />;
@@ -52,13 +54,22 @@ function renderPage(role, page) {
 }
 
 function Portal() {
-  const { user } = useAuth();
+  const { user, createApplicationIfMissing } = useAuth();
   const isComm = user?.role === 'reviewer';
   const nav    = isComm ? COMM_NAV : CAND_NAV;
   const defaultPage = isComm ? 'dashboard' : 'status';
-  const [page, setPage] = useState(defaultPage);
+  const [page, setPage]     = useState(defaultPage);
+  const [creating, setCreating] = useState(false);
 
   const role = isComm ? 'reviewer' : 'candidate';
+
+  const noApp = !isComm && !user?.appId;
+
+  const handleCreateApp = async () => {
+    setCreating(true);
+    await createApplicationIfMissing();
+    setCreating(false);
+  };
 
   return (
     <>
@@ -66,9 +77,14 @@ function Portal() {
       <div className="layout">
         <Sidebar role={role} nav={nav} page={page} setPage={setPage} />
         <main className="layout__main">
-          <div key={page} className="page-enter">
-            {renderPage(role, page)}
-          </div>
+          <ErrorBoundary>
+            <div key={page} className="page-enter">
+              {noApp
+                ? <NoApplicationScreen onCreate={handleCreateApp} creating={creating} />
+                : renderPage(role, page)
+              }
+            </div>
+          </ErrorBoundary>
         </main>
       </div>
     </>

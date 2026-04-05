@@ -1,53 +1,71 @@
-const labels = ['Лидерство', 'Мотивация', 'Коммуникация', 'Аналитика', 'Инициатива'];
-const values = [0.7, 0.8, 0.9, 0.7, 0.75];
-const N = labels.length;
-const cx = 80, cy = 80, r = 60;
+const KEY_LABELS = {
+  leadership:           'Лидерство',
+  motivation:           'Мотивация',
+  perseverance:         'Настойчивость',
+  teamwork:             'Командная работа',
+  goal_pursuit:         'Цели',
+  intrinsic_motivation: 'Инициатива',
+  prosocial_purpose:    'Соц. миссия',
+  D: 'Discipline',
+  R: 'Responsibility',
+  I: 'Insight',
+  V: 'Values',
+  E: 'Execution',
+};
 
-function pt(i, val) {
-  const angle = (Math.PI * 2 * i) / N - Math.PI / 2;
+function pt(i, val, n, cx, cy, r) {
+  const angle = (Math.PI * 2 * i) / n - Math.PI / 2;
   return [cx + r * val * Math.cos(angle), cy + r * val * Math.sin(angle)];
 }
 
-function polygon(vals) {
-  return vals.map((v, i) => pt(i, v).join(',')).join(' ');
+function polygon(vals, n, cx, cy, r) {
+  return vals.map((v, i) => pt(i, v, n, cx, cy, r).join(',')).join(' ');
 }
 
-export default function RadarChart() {
+export default function RadarChart({ data }) {
+  if (!data || typeof data !== 'object') return null;
+
+  const entries = Object.entries(data).filter(([, v]) => typeof v === 'number');
+  if (entries.length < 3) return null;
+
+  const labels = entries.map(([k]) => KEY_LABELS[k] || k);
+  const rawVals = entries.map(([, v]) => v);
+  const maxVal  = Math.max(...rawVals);
+  const values  = rawVals.map(v => (maxVal > 1 ? v / 10 : v));
+
+  const N = labels.length;
+  const cx = 80, cy = 80, r = 58;
   const rings = [0.25, 0.5, 0.75, 1];
+
   return (
     <div className="radar-wrap">
       <svg viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
-        {/* Grid rings */}
         {rings.map(ring => (
           <polygon
             key={ring}
-            points={polygon(Array(N).fill(ring))}
+            points={polygon(Array(N).fill(ring), N, cx, cy, r)}
             fill="none"
             stroke="var(--border)"
             strokeWidth="1"
           />
         ))}
-        {/* Axes */}
         {labels.map((_, i) => {
-          const [x, y] = pt(i, 1);
+          const [x, y] = pt(i, 1, N, cx, cy, r);
           return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--border)" strokeWidth="1" />;
         })}
-        {/* Data polygon */}
         <polygon
-          points={polygon(values)}
+          points={polygon(values, N, cx, cy, r)}
           fill="var(--accent)"
           fillOpacity="0.35"
           stroke="var(--accent-dark)"
           strokeWidth="2"
         />
-        {/* Data points */}
         {values.map((v, i) => {
-          const [x, y] = pt(i, v);
+          const [x, y] = pt(i, v, N, cx, cy, r);
           return <circle key={i} cx={x} cy={y} r="3.5" fill="var(--accent-dark)" />;
         })}
-        {/* Labels */}
         {labels.map((lbl, i) => {
-          const [x, y] = pt(i, 1.18);
+          const [x, y] = pt(i, 1.22, N, cx, cy, r);
           return (
             <text
               key={i}
