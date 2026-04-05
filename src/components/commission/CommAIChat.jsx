@@ -11,7 +11,6 @@ const QUICK_PROMPTS = [
   'Средний балл UNT',
 ];
 
-// Формируем контекст из данных дашборда для системного промпта
 function buildSystemPrompt(dashboardData) {
   const base = 'Ты AI-ассистент приёмной комиссии образовательной программы inVision U (Foundation Year 2026). Отвечай кратко и по делу на русском языке. Помогай анализировать данные кандидатов, формировать сводки, давать рекомендации по отбору.';
   if (!dashboardData) return base;
@@ -29,7 +28,6 @@ export default function CommAIChat() {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [msgs, typing]);
 
-  // Загружаем данные дашборда для контекста AI
   useEffect(() => {
     adminApi.dashboard()
       .then(setDashboardData)
@@ -45,7 +43,6 @@ export default function CommAIChat() {
     setMsgs(m => [...m, userMsg]);
     setTyping(true);
 
-    // Формируем историю для API (без системного сообщения приветствия)
     const history = [...msgs.slice(1), userMsg].map(m => ({
       role: m.role === 'ai' ? 'assistant' : 'user',
       content: m.text,

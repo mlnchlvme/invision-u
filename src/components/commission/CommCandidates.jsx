@@ -6,12 +6,12 @@ import { adminApi } from '../../api/admin';
 import { applicationsApi } from '../../api/applications';
 import { displayScore, scoreColor, scoreZone } from '../../utils/score';
 import {
-  IconFilter, IconDownload, IconChevronDown, IconChevronUp, IconSearch,
+  IconFilter, IconDownload, IconChevronDown, IconChevronUp,
 } from '../icons';
 import { toast } from '../shared/Toast';
 
 const ZONES    = ['', 'A', 'B', 'C'];
-const STATUSES = ['', 'draft', 'review', 'approved', 'rejected'];
+const STATUSES = ['', 'draft', 'rejected'];
 const PROGRAMS = ['', 'Foundation Year', 'Pre-University', 'Bachelor', 'Master'];
 const PER_PAGE = 20;
 
@@ -249,7 +249,6 @@ function CandidateDetail({ c, onDecision, saving, decisionState }) {
           <div style={{ marginTop: 12 }}>
             {[
               [t('candidates.field_name'),    d.full_name],
-              [t('candidates.field_program'), d.program],
               [t('candidates.field_city'),    d.city],
               [t('candidates.field_school'),  d.school_name || detail?.documents?.school_name],
               [t('candidates.field_ent'),     detail?.documents?.ent_score],
@@ -328,20 +327,16 @@ export default function CommCandidates() {
   const [decision, setDecision]     = useState({});
   const [saving, setSaving]         = useState({});
 
-  const [search, setSearch]         = useState('');
   const [zone, setZone]             = useState('');
   const [status, setStatus]         = useState('');
-  const [program, setProgram]       = useState('');
   const [page, setPage]             = useState(1);
   const [showFilters, setShowFilters] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
     const filters = { page, per_page: PER_PAGE };
-    if (search)  filters.search  = search;
     if (zone)    filters.zone    = zone;
     if (status)  filters.status  = status;
-    if (program) filters.program = program;
 
     adminApi.candidates(filters)
       .then(data => {
@@ -355,10 +350,10 @@ export default function CommCandidates() {
       })
       .catch(() => toast(t('candidates.load_error'), 'error'))
       .finally(() => setLoading(false));
-  }, [search, zone, status, program, page]);
+  }, [zone, status, page]);
 
   useEffect(() => { load(); }, [load]);
-  useEffect(() => { setPage(1); }, [search, zone, status, program]);
+  useEffect(() => { setPage(1); }, [zone, status]);
 
   const makeDecision = async (appId, decisionVal, agreedWithAi) => {
     setSaving(s => ({ ...s, [appId]: true }));
@@ -407,30 +402,9 @@ export default function CommCandidates() {
       <div className="content fade-in">
         <div className="card" style={{ marginBottom: 0 }}>
           <div className="flex gap-8 flex-wrap items-center">
-            <div style={{ position: 'relative', flex: '1 1 200px' }}>
-              <IconSearch
-                size={14}
-                style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', pointerEvents: 'none' }}
-              />
-              <input
-                type="text"
-                placeholder={t('candidates.search_placeholder')}
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-                style={{
-                  width: '100%', paddingLeft: 32,
-                  background: 'var(--surface)', border: '1.5px solid var(--border)',
-                  borderRadius: 'var(--r)', padding: '8px 12px 8px 32px',
-                  fontFamily: 'var(--font)', fontSize: 13, fontWeight: 600,
-                  color: 'var(--text)', outline: 'none',
-                }}
-                onFocus={e => (e.target.style.borderColor = 'var(--accent)')}
-                onBlur={e => (e.target.style.borderColor = 'var(--border)')}
-              />
-            </div>
             <button className="btn btn-ghost btn-sm" onClick={() => setShowFilters(f => !f)}>
               <IconFilter size={12} />
-              {t('candidates.filters')}{(zone || status || program) ? ' ●' : ''}
+              {t('candidates.filters')}{(zone || status) ? ' ●' : ''}
             </button>
           </div>
 
@@ -456,19 +430,9 @@ export default function CommCandidates() {
                   ))}
                 </div>
               </div>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 4 }}>{t('candidates.program_label')}</div>
-                <div className="flex gap-6 flex-wrap">
-                  {PROGRAMS.map(pr => (
-                    <button key={pr || 'all'} className={`btn btn-sm ${program === pr ? 'btn-primary' : 'btn-ghost'}`} onClick={() => setProgram(pr)}>
-                      {pr || t('common.all')}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {(zone || status || program) && (
+              {(zone || status) && (
                 <div style={{ alignSelf: 'flex-end' }}>
-                  <button className="btn btn-ghost btn-sm" onClick={() => { setZone(''); setStatus(''); setProgram(''); }}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => { setZone(''); setStatus(''); }}>
                     {t('common.reset')}
                   </button>
                 </div>
@@ -490,7 +454,6 @@ export default function CommCandidates() {
                 <thead>
                   <tr>
                     <th>{t('candidates.col_candidate')}</th>
-                    <th>{t('candidates.col_program')}</th>
                     <th>{t('candidates.col_score')}</th>
                     <th>{t('candidates.col_zone')}</th>
                     <th>{t('candidates.col_city')}</th>
@@ -507,7 +470,6 @@ export default function CommCandidates() {
                         onClick={() => setExpanded(expanded === c.id ? null : c.id)}
                       >
                         <td><div className="name">{c.full_name}</div></td>
-                        <td>{c.program}</td>
                         <td>
                           <span className="mono" style={{ fontWeight: 800, color: scoreColor(c.final_score) }}>
                             {displayScore(c.final_score)}
