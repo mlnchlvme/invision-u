@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { applicationsApi } from '../../api/applications';
 import { useAuth } from '../../context/AuthContext';
+import { displayScore, scoreColor, scoreZone } from '../../utils/score';
 import { IconCheck, IconLightbulb, IconZap } from '../icons';
 
 export default function CandidateProcessing() {
   const { user } = useAuth();
-  const [dots, setDots] = useState(0);
+  const [dots, setDots]     = useState(0);
   const [status, setStatus] = useState(null);
 
   useEffect(() => {
@@ -21,29 +22,52 @@ export default function CandidateProcessing() {
     }
   }, [user?.appId]);
 
-  const steps = [
-    { label: 'Транскрипция видео',         done: true  },
-    { label: 'Анализ письменных ответов',   done: true  },
-    { label: 'NLP оценка компетенций',      done: false },
-    { label: 'Финальный скоринг',           done: false },
+  const processingSteps = [
+    { label: 'Транскрипция видео',        done: status?.completed_steps?.includes('transcription')   ?? status?.video_url },
+    { label: 'Анализ письменных ответов', done: status?.completed_steps?.includes('essay_analysis')  ?? status?.answers?.length > 0 },
+    { label: 'NLP оценка компетенций',    done: status?.completed_steps?.includes('nlp_scoring')     ?? false },
+    { label: 'Финальный скоринг',         done: status?.completed_steps?.includes('final_scoring')   ?? status?.final_score != null },
   ];
+
+  const isComplete = ['approved', 'rejected'].includes(status?.status);
+  const finalScore = status?.final_score;
 
   return (
     <div className="processing fade-in" style={{ padding: '48px 24px' }}>
-      <div style={{ position: 'relative', width: 64, height: 64 }}>
-        <div className="spinner" style={{ width: 64, height: 64, borderWidth: 4 }} />
-        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-dark)' }}>
-          <IconZap size={22} />
+      {!isComplete && (
+        <div style={{ position: 'relative', width: 64, height: 64 }}>
+          <div className="spinner" style={{ width: 64, height: 64, borderWidth: 4 }} />
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-dark)' }}>
+            <IconZap size={22} />
+          </div>
         </div>
-      </div>
+      )}
 
       <h2>
-        Обработка заявки{'...'.slice(0, dots)}
+        {isComplete ? 'Обработка завершена' : `Обработка заявки${'...'.slice(0, dots)}`}
       </h2>
       <p className="text-muted" style={{ fontWeight: 500, maxWidth: 360 }}>
-        AI анализирует ваши ответы и видео. Обычно это занимает 24–48 часов.
-        Вы получите уведомление на email.
+        {isComplete
+          ? 'Ваша заявка прошла AI-анализ. Решение комиссии отправлено на email.'
+          : 'AI анализирует ваши ответы и видео. Обычно это занимает 24–48 часов. Вы получите уведомление на email.'}
       </p>
+
+      {finalScore != null && (
+        <div className="card" style={{ width: '100%', maxWidth: 420, marginBottom: 0 }}>
+          <div className="flex justify-between items-center" style={{ marginBottom: 8 }}>
+            <span className="text-muted text-sm" style={{ fontWeight: 600 }}>Ваш AI Score</span>
+            <span className="mono" style={{ fontWeight: 900, fontSize: 24, color: scoreColor(finalScore) }}>
+              {displayScore(finalScore)}
+            </span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-muted text-sm" style={{ fontWeight: 600 }}>Зона</span>
+            <span className="mono" style={{ fontWeight: 700, fontSize: 14, color: scoreColor(finalScore) }}>
+              Zone {scoreZone(finalScore)}
+            </span>
+          </div>
+        </div>
+      )}
 
       {status && (
         <div className="card" style={{ width: '100%', maxWidth: 420, marginBottom: 0 }}>
@@ -56,8 +80,8 @@ export default function CandidateProcessing() {
 
       <div className="card" style={{ width: '100%', maxWidth: 420 }}>
         <h3>Статус обработки</h3>
-        {steps.map((s, i) => (
-          <div key={i} className="flex items-center justify-between" style={{ marginBottom: i < steps.length - 1 ? 12 : 0, fontSize: 13 }}>
+        {processingSteps.map((s, i) => (
+          <div key={i} className="flex items-center justify-between" style={{ marginBottom: i < processingSteps.length - 1 ? 12 : 0, fontSize: 13 }}>
             <div className="flex items-center gap-8">
               <div style={{ width: 8, height: 8, borderRadius: '50%', background: s.done ? 'var(--green)' : 'var(--border)', flexShrink: 0 }} />
               <span style={{ fontWeight: 500, color: s.done ? 'var(--text)' : 'var(--muted)' }}>{s.label}</span>

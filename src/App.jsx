@@ -10,10 +10,11 @@ import AuthPage from './pages/Auth';
 import Header   from './components/layout/Header';
 import Sidebar  from './components/layout/Sidebar';
 
-import CommDashboard from './components/commission/CommDashboard';
-import CommAIChat    from './components/commission/CommAIChat';
-import CommSettings  from './components/commission/CommSettings';
-import CommAnalytics from './components/commission/CommAnalytics';
+import CommDashboard  from './components/commission/CommDashboard';
+import CommCandidates from './components/commission/CommCandidates';
+import CommAIChat     from './components/commission/CommAIChat';
+import CommSettings   from './components/commission/CommSettings';
+import CommAnalytics  from './components/commission/CommAnalytics';
 
 import CandidateStatus     from './components/candidate/CandidateStatus';
 import CandidateQuestions  from './components/candidate/CandidateQuestions';
@@ -35,10 +36,11 @@ function UnderConstruction() {
 
 function renderPage(role, page) {
   if (role === 'reviewer') {
-    if (page === 'dashboard' || page === 'candidates') return <CommDashboard />;
-    if (page === 'ai-chat')  return <CommAIChat />;
-    if (page === 'settings') return <CommSettings />;
-    if (page === 'analytics') return <CommAnalytics />;
+    if (page === 'dashboard')  return <CommDashboard />;
+    if (page === 'candidates') return <CommCandidates />;  // отдельный компонент
+    if (page === 'ai-chat')    return <CommAIChat />;
+    if (page === 'settings')   return <CommSettings />;
+    if (page === 'analytics')  return <CommAnalytics />;
     return <UnderConstruction />;
   }
   if (page === 'status')     return <CandidateStatus />;

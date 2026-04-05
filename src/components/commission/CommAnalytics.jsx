@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { adminApi } from '../../api/admin';
 import BarChart from '../shared/BarChart';
+import { displayScore } from '../../utils/score';
 import { IconTrendUp } from '../icons';
 
 export default function CommAnalytics() {
-  const [stats, setStats]   = useState(null);
+  const [stats, setStats]     = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,25 +27,20 @@ export default function CommAnalytics() {
 
   const byStatus = stats?.by_status
     ? Object.entries(stats.by_status).map(([l, v]) => ({ l, v }))
-    : [
-        { l: 'draft',    v: 12 },
-        { l: 'review',   v: 38 },
-        { l: 'approved', v: 67 },
-        { l: 'rejected', v: 21 },
-      ];
+    : [];
 
   const byZone = stats?.by_zone
     ? Object.entries(stats.by_zone).map(([l, v]) => ({ l, v }))
-    : [
-        { l: 'Zone A', v: 44, color: 'var(--green)' },
-        { l: 'Zone B', v: 58 },
-        { l: 'Zone C', v: 28, color: 'var(--red)' },
-      ];
+    : [];
+
+  const avgScoreDisplay = stats?.avg_final_score != null
+    ? displayScore(stats.avg_final_score)
+    : '—';
 
   const kpis = [
-    { label: 'Всего заявок',       val: stats?.total_applications ?? 142 },
-    { label: 'Средний AI Score',    val: stats?.avg_final_score   != null ? stats.avg_final_score.toFixed(1) : '76.4' },
-    { label: 'AI-флагов',           val: stats?.ai_flagged        ?? 14 },
+    { label: 'Всего заявок',    val: stats?.total_applications != null ? String(stats.total_applications) : '—' },
+    { label: 'Средний AI Score', val: avgScoreDisplay },
+    { label: 'AI-флагов',       val: stats?.ai_flagged        != null ? String(stats.ai_flagged) : '—' },
   ];
 
   return (
@@ -69,31 +65,43 @@ export default function CommAnalytics() {
           ))}
         </div>
 
-        <div className="flex flex-wrap gap-12">
-          <div className="card" style={{ flex: '1 1 280px' }}>
-            <h3>По статусам</h3>
-            <BarChart data={byStatus} />
+        {(byStatus.length > 0 || byZone.length > 0) ? (
+          <div className="flex flex-wrap gap-12">
+            {byStatus.length > 0 && (
+              <div className="card" style={{ flex: '1 1 280px' }}>
+                <h3>По статусам</h3>
+                <BarChart data={byStatus} />
+              </div>
+            )}
+            {byZone.length > 0 && (
+              <div className="card" style={{ flex: '1 1 280px' }}>
+                <h3>По зонам (AI Score)</h3>
+                <BarChart data={byZone} />
+              </div>
+            )}
           </div>
-          <div className="card" style={{ flex: '1 1 280px' }}>
-            <h3>По зонам (AI Score)</h3>
-            <BarChart data={byZone} />
+        ) : (
+          <div className="card">
+            <p className="text-muted text-sm">Статистика загружается или недоступна</p>
           </div>
-        </div>
+        )}
 
-        <div className="card">
-          <h3>Распределение по зонам</h3>
-          {byZone.map((z, i) => (
-            <div key={i} style={{ marginBottom: 12 }}>
-              <div className="flex justify-between text-sm" style={{ fontWeight: 600, marginBottom: 4 }}>
-                <span>{z.l}</span>
-                <span className="mono text-muted">{z.v}</span>
+        {byZone.length > 0 && (
+          <div className="card">
+            <h3>Распределение по зонам</h3>
+            {byZone.map((z, i) => (
+              <div key={i} style={{ marginBottom: 12 }}>
+                <div className="flex justify-between text-sm" style={{ fontWeight: 600, marginBottom: 4 }}>
+                  <span>{z.l}</span>
+                  <span className="mono text-muted">{z.v}</span>
+                </div>
+                <div className="progress-bar">
+                  <div className="fill" style={{ width: `${(z.v / (stats?.total_applications || 1)) * 100}%`, background: z.color || 'var(--accent)' }} />
+                </div>
               </div>
-              <div className="progress-bar">
-                <div className="fill" style={{ width: `${(z.v / (stats?.total_applications || 130)) * 100}%`, background: z.color || 'var(--accent)' }} />
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </>
   );
