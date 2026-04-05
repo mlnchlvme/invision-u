@@ -205,7 +205,7 @@ function CandidateDetail({ c, onDecision, saving, decisionState }) {
       .finally(() => setLoadingDetail(false));
   }, [c?.id]);
 
-  const d = detail || c;
+  const d = { ...c, ...detail };
 
   const scores7 = (() => {
     if (!detail) return null;
@@ -255,6 +255,7 @@ function CandidateDetail({ c, onDecision, saving, decisionState }) {
               [t('candidates.field_ent'),     detail?.documents?.ent_score],
               [t('candidates.field_gpa'),     detail?.documents?.gpa],
               [t('candidates.field_ielts'),   detail?.documents?.ielts_score],
+              [t('candidates.field_zone'),    `${scoreZone(d.final_score)} · ${displayScore(d.final_score)}`],
             ].filter(([, v]) => v != null && v !== '').map(([k, v]) => (
               <div key={k} className="flex justify-between text-sm" style={{ marginBottom: 5 }}>
                 <span className="text-muted" style={{ fontWeight: 600 }}>{k}</span>
